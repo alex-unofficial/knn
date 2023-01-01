@@ -1,0 +1,8 @@
+# gitignore file
+
+# the executable and object files
+bin/*
+build/*
+
+# valgrind files
+vgcore.*
