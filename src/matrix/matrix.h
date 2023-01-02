@@ -15,7 +15,7 @@ typedef struct Matrix {
 matrix *create_matrix(size_t rows, size_t cols);
 void delete_matrix(matrix *m);
 
-#define MATRIX_ELEM(m, i, j) (((m)->data)[(i) * ((m)->cols) + (j)])
-#define MATRIX_ROW(m, i) (((m)->data) + (i) * ((m)->cols))
+#define MATRIX_ELEM(m, i, j, rows, cols) ((m)[(i) * (cols) + (j)])
+#define MATRIX_ROW(m, i, rows, cols) ((m) + (i) * (cols))
 
 #endif

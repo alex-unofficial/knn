@@ -1,11 +1,9 @@
 #ifndef SEDM_H
 #define SEDM_H
 
-#include "matrix.h"
+#define sedm(X, n, Y, m, d, D) (sedm_simp((X), (n), (Y), (m), (d), (D)))
 
-#define sedm(X, Y) (sedm_simp((X), (Y)))
-
-matrix *sedm_comp(const matrix *X, const matrix *Y);
-matrix *sedm_simp(const matrix *X, const matrix *Y);
+void sedm_comp(float *X, int n, float *Y, int m, int d, float *distance_matrix);
+void sedm_simp(float *X, int n, float *Y, int m, int d, float *distance_matrix);
 
 #endif
