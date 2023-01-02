@@ -2,7 +2,7 @@
 #include <gsl/gsl_cblas.h>
 
 #include "matrix.h"
-#include "simd.h"
+#include "def.h"
 
 #define min(x, y) (((x) < (y)) ? (x) : (y))
 

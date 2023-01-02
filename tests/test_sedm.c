@@ -5,8 +5,8 @@
 #include <math.h>
 
 #include "sedm.h"
-
 #include "matrix.h"
+#include "def.h"
 
 #define EPSILON 1e-3
 

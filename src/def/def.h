@@ -1,5 +1,5 @@
-#ifndef SIMD_H
-#define SIMD_H
+#ifndef DEF_H
+#define DEF_H
 
 #include <immintrin.h>
 

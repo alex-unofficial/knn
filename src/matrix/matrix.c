@@ -1,7 +1,7 @@
 #include <stdlib.h>
 
 #include "matrix.h"
-#include "simd.h"
+#include "def.h"
 
 matrix *create_matrix(size_t rows, size_t cols) {
 	matrix *m = (matrix *)malloc(sizeof(matrix));

@@ -1,7 +1,7 @@
 #ifndef MATRIX_H
 #define MATRIX_H
 
-#include "simd.h"
+#include "def.h"
 
 typedef struct Matrix {
 	// size of matrix
