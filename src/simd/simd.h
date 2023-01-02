@@ -3,6 +3,8 @@
 
 #include <immintrin.h>
 
+typedef float elem_t;
+
 #define VEC_T __m256
 #define VEC_SIZE 8
 #define VEC_ALIGN 32
