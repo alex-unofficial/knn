@@ -14,10 +14,17 @@
 int main(int argc, char** argv) {
 	srand(time(NULL));
 
+	printf("===== tesing sedm =====\n");
+
+	printf("\n");
+
 	// Set the dimensions of the matrices
 	int n = 1000;
 	int m = 6000;
 	int d = 512;
+
+	printf("n = %d\nm = %d\nd = %d\n", n, m, d);
+	printf("\n");
 
 	// Allocate memory for the matrices
 	matrix *X = create_matrix(n, d);
@@ -50,30 +57,25 @@ int main(int argc, char** argv) {
 	double sedm_simp_time = (double) (end.tv_sec - start.tv_sec) * 1000.0 + (double) (end.tv_nsec - start.tv_nsec) / 1000000.0;
 
 	// Compare the distance matrices
-   	int equal = 1;
+   	int errors = 0;
 	for (int i = 0; i < n; i++) {
 		for (int j = 0; j < m; j++) {
 			if (fabs(MATRIX_ELEM(distance_matrix->data, i, j, n, m) 
 				   - MATRIX_ELEM(reference_distance_matrix->data, i, j, n, m)) > EPSILON) {
 
-				equal = 0;
-
-				printf("Difference at (%d, %d): %0.4f (calculated) vs %0.4f (reference)\n", i, j, 
-					MATRIX_ELEM(distance_matrix->data, i, j, n, m), 
+				printf("%d: Difference at (%d, %d): %0.4f (calculated) vs %0.4f (reference)\n", i, j, 
+					++errors, MATRIX_ELEM(distance_matrix->data, i, j, n, m), 
 					MATRIX_ELEM(reference_distance_matrix->data, i, j, n, m));
 			}
 		}
 	}
 
-	if (equal) {
-		printf("The distance matrices are equal.\n");
-	} else {
-		printf("\nThe distance matrices are not equal.\n");
-	}
+	printf("found %d errors\n", errors);
 
 	printf("The simple version took %0.2f ms\n", sedm_simp_time);
 	printf("The compound version took %0.2f ms\n", sedm_comp_time);
 	printf("The relative speedup is %0.0f\%\n", 100.0 * sedm_comp_time / sedm_simp_time);
+	printf("\n");
 
 	// Free memory
 	delete_matrix(X);

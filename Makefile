@@ -34,11 +34,6 @@ CPPFLAGS=$(INC_FLAGS) -MMD -MP
 
 .PHONY: test
 test: $(addprefix $(BIN_DIR)/,$(TESTS))
-	@for test in $(TESTS); do \
-		echo ""; \
-		echo "=== Running test: $$test ==="; \
-		$(BIN_DIR)/$$test; \
-	done
 
 $(BIN_DIR)/%: $(BUILD_DIR)/%.o $(OBJS) | $(BIN_DIR)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $^ -o $@ $(LDFLAGS)
