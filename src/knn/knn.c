@@ -22,7 +22,7 @@ knn_result *knn(const elem_t *X, size_t n, const elem_t *Y, size_t m, int d, int
 	int t = omp_get_max_threads();
 	omp_set_num_threads(t);
 
-	matrix *D = create_matrix(t, m);
+	elem_t *D = create_matrix(t, m);
 	size_t *ind = (size_t *) malloc(t * m * sizeof(size_t));
 
 	// slice X into parts of size t in order to not use a lot of memory.
@@ -34,12 +34,12 @@ knn_result *knn(const elem_t *X, size_t n, const elem_t *Y, size_t m, int d, int
 		const elem_t *X_slice = MATRIX_ROW(X, X_begin, n, d);
 
 		// calculate the SEDM for X_slice and Y
-		sedm(X_slice, slice_size, Y, m, d, D->data);
+		sedm(X_slice, slice_size, Y, m, d, D);
 
 		// in parallel for all rows in the slice perform knn
 		#pragma omp parallel for
 		for(int tid = 0 ; tid < slice_size ; tid++) {
-			elem_t *Di = MATRIX_ROW(D->data, tid, t, m);
+			elem_t *Di = MATRIX_ROW(D, tid, t, m);
 			size_t *ind_i = MATRIX_ROW(ind, tid, t, m);
 
 			gen_indices(ind_i, m);

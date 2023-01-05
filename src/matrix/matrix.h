@@ -3,17 +3,13 @@
 
 #include "def.h"
 
-typedef struct Matrix {
-	// size of matrix
-	size_t rows;
-	size_t cols;
+static inline elem_t *create_matrix(size_t rows, size_t cols) {
+	return (elem_t *) _mm_malloc(rows * cols * sizeof(elem_t), VEC_ALIGN);
+}
 
-	// data in matrix 
-	elem_t *data;
-} matrix;
-
-matrix *create_matrix(size_t rows, size_t cols);
-void delete_matrix(matrix *m);
+static inline void delete_matrix(elem_t *m) {
+	_mm_free(m);
+}
 
 #define MATRIX_ELEM(m, i, j, rows, cols) ((m)[(i) * (cols) + (j)])
 #define MATRIX_ROW(m, i, rows, cols) ((m) + (i) * (cols))
