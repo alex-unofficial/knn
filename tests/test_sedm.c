@@ -14,9 +14,7 @@
 int main(int argc, char** argv) {
 	srand(time(NULL));
 
-	printf("===== tesing sedm =====\n");
-
-	printf("\n");
+	printf("========= testing sedm ==========\n");
 
 	// Set the dimensions of the matrices
 	int n = 1000;
@@ -56,6 +54,7 @@ int main(int argc, char** argv) {
 	clock_gettime(CLOCK_MONOTONIC, &end);
 	double sedm_simp_time = (double) (end.tv_sec - start.tv_sec) * 1000.0 + (double) (end.tv_nsec - start.tv_nsec) / 1000000.0;
 
+	printf("checking for errors:\n");
 	// Compare the distance matrices
    	int errors = 0;
 	for (int i = 0; i < n; i++) {
@@ -71,6 +70,7 @@ int main(int argc, char** argv) {
 	}
 
 	printf("found %d errors\n", errors);
+	printf("\n");
 
 	printf("The simple version took %0.2f ms\n", sedm_simp_time);
 	printf("The compound version took %0.2f ms\n", sedm_comp_time);
@@ -83,5 +83,8 @@ int main(int argc, char** argv) {
 	delete_matrix(distance_matrix);
 	delete_matrix(reference_distance_matrix);
 
-	return 0;
+	if(!errors)
+		return 0;
+	else
+		return 1;
 }

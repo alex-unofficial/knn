@@ -8,6 +8,7 @@ BUILD_DIR	?= ./build
 BIN_DIR		?= ./bin
 SRC_DIR 	?= ./src
 TESTS_DIR	?= ./tests
+TOOLS_DIR ?= ./tools
 
 # Source files for the project
 SRCS := $(notdir $(shell find $(SRC_DIR) -name *.c))
@@ -32,8 +33,14 @@ VPATH=$(TESTS_DIR):$(subst $(SPACE),:,$(INC_DIRS))
 # C preprocessor flags
 CPPFLAGS=$(INC_FLAGS) -MMD -MP
 
-.PHONY: test
-test: $(addprefix $(BIN_DIR)/,$(TESTS))
+.PHONY: default test tests clean
+
+default: tests
+
+test: tests
+	@$(TOOLS_DIR)/runtests.sh
+
+tests: $(addprefix $(BIN_DIR)/,$(TESTS))
 
 $(BIN_DIR)/%: $(BUILD_DIR)/%.o $(OBJS) | $(BIN_DIR)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $^ -o $@ $(LDFLAGS)
@@ -47,7 +54,6 @@ $(BIN_DIR) $(BUILD_DIR):
 	@mkdir -p $@
 
 # Remove all the produced files from the directory
-.PHONY: clean
 clean: 
 	rm -rf $(BIN_DIR) $(BUILD_DIR)
 

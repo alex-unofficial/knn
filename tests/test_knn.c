@@ -23,7 +23,7 @@ int int_pow(int base, int power) {
 
 int main(int argc, char **argv) {
 
-	printf("===== testing knn =====\n");
+	printf("========== testing knn ==========\n");
 
 	int side_len = 100;
 	int d = 2;
@@ -85,5 +85,8 @@ int main(int argc, char **argv) {
 	delete_matrix(X);
 	delete_knn(res);
 
-	return 0;
+	if(!errors)
+		return 0;
+	else
+		return 1;
 }

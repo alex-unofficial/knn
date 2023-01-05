@@ -7,16 +7,16 @@
 
 int main(int argc, char **argv) {
 
-	printf("===== testing qselect =====\n");
+	printf("======== testing qselect ========\n");
 
+	printf("array_1 = [1..N]\n");
 	printf("\n");
 
-	printf("--- array I: [1..N]\n");
-
 	int N = 10000;
-	int k = 320;
+	int k = 150;
 
 	printf("N = %d\nk = %d\n", N, k);
+	printf("\n");
 
 	elem_t arr[N];
 	size_t ind[N];
@@ -32,11 +32,14 @@ int main(int argc, char **argv) {
 
 	elem_t r = qselect(k, arr, ind, N);
 
-	if(r != (elem_t) k) 
-		printf("wrong k-th smallest element: %0.1f returned vs %0.1f true\n", r, (elem_t) k);
-	else
-		printf("correctly returned the k-th smallest element\n");
+	printf("checking for errors:\n");
 
+	int errors1 = 0;
+
+	if(r != (elem_t) k) 
+		printf("%d: wrong k-th smallest element: %0.1f returned vs %0.1f true\n", ++errors1, r, (elem_t) k);
+
+	// using BubbleSort to sort the k first elements
 	for (int i = 0; i < k - 1; i++)
 		for (int j = 0; j < k - i - 1; j++)
 			if (arr[j] > arr[j + 1]) {
@@ -44,24 +47,23 @@ int main(int argc, char **argv) {
 				SWAP(ind[j], ind[j + 1]);
 			}
 
-	printf("checking for errors:\n");
-
-	int errors = 0;
 	for(int i = 0 ; i < k ; i++) {
 		if(arr[i] != (elem_t) (i + 1))
-			printf("%d: error arr[%d] = %0.1f != %0.1f\n", ++errors, i, arr[i], (elem_t) (i + 1));
+			printf("%d: error arr[%d] = %0.1f != %0.1f\n", ++errors1, i, arr[i], (elem_t) (i + 1));
 	}
 	
-	printf("found %d errors\n", errors);
-	
+	printf("found %d errors\n", errors1);
 	printf("\n");
-
-	printf("--- array II: [1, 2, 3, 3, 4, 5, 6]\n");
+	printf("---------------------------------\n");
+	
+	printf("array_2 = [1, 2, 3, 3, 4, 5, 6]\n");
+	printf("\n");
 
 	N = 7;
 	k = 4;
 
 	printf("N = %d\nk = %d\n", N, k);
+	printf("\n");
 
 	elem_t arr2[] = {1.0, 2.0, 3.0, 3.0, 4.0, 5.0, 6.0};
 	size_t ind2[N];
@@ -76,10 +78,11 @@ int main(int argc, char **argv) {
 
 	r = qselect(k, arr2, ind2, N);
 
+	printf("checking for errors:\n");
+	int errors2 = 0;
+
 	if(r != 3.0) 
-		printf("wrong k-th smallest element: %0.1f returned vs %0.1f true\n", r, 3.0);
-	else
-		printf("correctly returned the k-th smallest element\n");
+		printf("%d: wrong k-th smallest element: %0.1f returned vs %0.1f true\n", ++errors2, r, 3.0);
 
 	for (int i = 0; i < k - 1; i++)
 		for (int j = 0; j < k - i - 1; j++)
@@ -88,26 +91,29 @@ int main(int argc, char **argv) {
 				SWAP(ind2[j], ind2[j + 1]);
 			}
 
-	printf("checking for errors:\n");
 
-	errors = 0;
 	if(arr2[0] != 1.0)
-		printf("%d: error arr[%d] = %0.1f != %0.1f\n", ++errors, 0, arr2[0], 1.0);
+		printf("%d: error arr[%d] = %0.1f != %0.1f\n", ++errors2, 0, arr2[0], 1.0);
 	if(arr2[1] != 2.0)
-		printf("%d: error arr[%d] = %0.1f != %0.1f\n", ++errors, 1, arr2[1], 2.0);
+		printf("%d: error arr[%d] = %0.1f != %0.1f\n", ++errors2, 1, arr2[1], 2.0);
 	if(arr2[2] != 3.0)
-		printf("%d: error arr[%d] = %0.1f != %0.1f\n", ++errors, 2, arr2[2], 3.0);
+		printf("%d: error arr[%d] = %0.1f != %0.1f\n", ++errors2, 2, arr2[2], 3.0);
 	if(arr2[3] != 3.0)
-		printf("%d: error arr[%d] = %0.1f != %0.1f\n", ++errors, 3, arr2[3], 3.0);
+		printf("%d: error arr[%d] = %0.1f != %0.1f\n", ++errors2, 3, arr2[3], 3.0);
 	
-	printf("found %d errors\n", errors);
+	printf("found %d errors\n", errors2);
+	printf("\n");
 
+	printf("---------------------------------\n");
+
+	printf("array_3 = [1, 2, 3, 3, 4, 5, 6]\n");
 	printf("\n");
 
 	N = 7;
 	k = 3;
 
 	printf("N = %d\nk = %d\n", N, k);
+	printf("\n");
 
 	for(int i = 0 ; i < N ; i++) {
 		int j = rand() % N;
@@ -117,10 +123,11 @@ int main(int argc, char **argv) {
 
 	r = qselect(k, arr2, ind2, N);
 
+	printf("checking for errors:\n");
+	int errors3 = 0;
+
 	if(r != 3.0) 
-		printf("wrong k-th smallest element: %0.1f returned vs %0.1f true\n", r, 3.0);
-	else
-		printf("correctly returned the k-th smallest element\n");
+		printf("%d: wrong k-th smallest element: %0.1f returned vs %0.1f true\n", ++errors3, r, 3.0);
 
 	for (int i = 0; i < k - 1; i++)
 		for (int j = 0; j < k - i - 1; j++)
@@ -129,19 +136,19 @@ int main(int argc, char **argv) {
 				SWAP(ind2[j], ind2[j + 1]);
 			}
 
-	printf("checking for errors:\n");
-
-	errors = 0;
 	if(arr2[0] != 1.0)
-		printf("%d: error arr[%d] = %0.1f != %0.1f\n", ++errors, 0, arr2[0], 1.0);
+		printf("%d: error arr[%d] = %0.1f != %0.1f\n", ++errors3, 0, arr2[0], 1.0);
 	if(arr2[1] != 2.0)
-		printf("%d: error arr[%d] = %0.1f != %0.1f\n", ++errors, 1, arr2[1], 2.0);
+		printf("%d: error arr[%d] = %0.1f != %0.1f\n", ++errors3, 1, arr2[1], 2.0);
 	if(arr2[2] != 3.0)
-		printf("%d: error arr[%d] = %0.1f != %0.1f\n", ++errors, 2, arr2[2], 3.0);
+		printf("%d: error arr[%d] = %0.1f != %0.1f\n", ++errors3, 2, arr2[2], 3.0);
 	
-	printf("found %d errors\n", errors);
+	printf("found %d errors\n", errors3);
 
 	printf("\n");
 
-	return 0;
+	if(!errors1 && !errors2 && !errors3)
+		return 0;
+	else
+		return 1 ;
 }
