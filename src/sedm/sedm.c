@@ -6,9 +6,7 @@
 #include "matrix.h"
 #include "def.h"
 
-#define min(x, y) (((x) < (y)) ? (x) : (y))
-
-void sedm_comp(elem_t *X, size_t n, elem_t *Y, size_t m, size_t d, elem_t *distance_matrix) {
+void sedm_comp(const elem_t *X, size_t n, const elem_t *Y, size_t m, size_t d, elem_t *distance_matrix) {
 
 	// Setting the number of threads for OpenMP to be the maximum possible
 	int threadnum = omp_get_max_threads();
@@ -26,8 +24,7 @@ void sedm_comp(elem_t *X, size_t n, elem_t *Y, size_t m, size_t d, elem_t *dista
 			x_sqrd = VEC_FMADD(x, x, x_sqrd);
 		}
 
-		elem_t sum = x_sqrd[0] + x_sqrd[1] + x_sqrd[2] + x_sqrd[3] 
-				  + x_sqrd[4] + x_sqrd[5] + x_sqrd[6] + x_sqrd[7];
+		elem_t sum = VEC_SUM(x_sqrd);
 
 		for (size_t k = d - d % VEC_SIZE; k < d; k++) {
 			elem_t x = MATRIX_ELEM(X, i, k, n, d);
@@ -46,8 +43,7 @@ void sedm_comp(elem_t *X, size_t n, elem_t *Y, size_t m, size_t d, elem_t *dista
 			y_sqrd = VEC_FMADD(y, y, y_sqrd);
 		}
 		
-		elem_t sum = y_sqrd[0] + y_sqrd[1] + y_sqrd[2] + y_sqrd[3] 
-				  + y_sqrd[4] + y_sqrd[5] + y_sqrd[6] + y_sqrd[7];
+		elem_t sum = VEC_SUM(y_sqrd);
 
 		for (size_t k = d - d % VEC_SIZE; k < d; k++) {
 			elem_t y = MATRIX_ELEM(Y, j, k, m, d);
@@ -66,7 +62,7 @@ void sedm_comp(elem_t *X, size_t n, elem_t *Y, size_t m, size_t d, elem_t *dista
 		size_t i_begin = t * n / threadnum;
 		size_t i_end = min((t + 1) * n / threadnum, n);
 
-		elem_t *Xi = MATRIX_ROW(X, i_begin, n, d);
+		const elem_t *Xi = MATRIX_ROW(X, i_begin, n, d);
 		elem_t *XYi = MATRIX_ROW(XY, i_begin, n, m);
 
 		cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans, 
@@ -89,7 +85,7 @@ void sedm_comp(elem_t *X, size_t n, elem_t *Y, size_t m, size_t d, elem_t *dista
 	free(XY);
 }
 
-void sedm_simp(elem_t *X, size_t n, elem_t *Y, size_t m, size_t d, elem_t *distance_matrix) {
+void sedm_simp(const elem_t *X, size_t n, const elem_t *Y, size_t m, size_t d, elem_t *distance_matrix) {
 
 	// Setting the number of threads for OpenMP to be the maximum possible
 	int threadnum = omp_get_max_threads();
@@ -111,8 +107,7 @@ void sedm_simp(elem_t *X, size_t n, elem_t *Y, size_t m, size_t d, elem_t *dista
 				v_sum = VEC_FMADD(diff, diff, v_sum);
 			}
 
-			elem_t sum = v_sum[0] + v_sum[1] + v_sum[2] + v_sum[3] 
-					  + v_sum[4] + v_sum[5] + v_sum[6] + v_sum[7];
+			elem_t sum = VEC_SUM(v_sum);
 
 			for(size_t k = d - d % VEC_SIZE; k < d; k++) {
 				elem_t x = MATRIX_ELEM(X, i, k, n, d);

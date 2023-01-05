@@ -4,7 +4,11 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-elem_t qselect(size_t k, elem_t *arr, size_t size) {
+void gen_indices(size_t *ind, size_t size) {
+	for(size_t i = 0 ; i < size ; i++) ind[i] = i;
+}
+
+elem_t qselect(size_t k, elem_t *arr, size_t *ind, size_t size) {
 
 	size_t start_idx = 0, end_idx = size;
 
@@ -16,17 +20,20 @@ elem_t qselect(size_t k, elem_t *arr, size_t size) {
 		elem_t pivot_val = arr[pivot_idx];
 
 		SWAP(arr[pivot_idx], arr[end_idx - 1]);
+		SWAP(ind[pivot_idx], ind[end_idx - 1]);
 
 		size_t store_idx = start_idx;
 
 		for(size_t i = start_idx ; i < end_idx - 1 ; i++) {
 			if(arr[i] <= pivot_val) {
 				SWAP(arr[store_idx], arr[i]);
+				SWAP(ind[store_idx], ind[i]);
 				store_idx += 1;
 			}
 		}
 
 		SWAP(arr[end_idx - 1], arr[store_idx]);
+		SWAP(ind[end_idx - 1], ind[store_idx]);
 
 		pivot_idx = store_idx;
 
