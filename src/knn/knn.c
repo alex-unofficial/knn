@@ -7,6 +7,10 @@
 #include "matrix.h"
 #include "def.h"
 
+#ifndef MAX_MEM
+#define MAX_MEM (1 << 30)
+#endif
+
 knn_result *knn(const elem_t *X, size_t n, const elem_t *Y, size_t m, int d, int k) {
 
 	// the result will be stored in res.
@@ -19,8 +23,10 @@ knn_result *knn(const elem_t *X, size_t n, const elem_t *Y, size_t m, int d, int
 	res->n_dist = (elem_t *) malloc(n * k * sizeof(elem_t));
 
 	// setting up OpenMP to use the maximum available threads
-	int t = omp_get_max_threads();
-	omp_set_num_threads(t);
+	int threadnum = omp_get_max_threads();
+	omp_set_num_threads(threadnum);
+
+	int t = min(MAX_MEM / (m * (sizeof(size_t) + sizeof(elem_t))), n);
 
 	elem_t *D = create_matrix(t, m);
 	size_t *ind = (size_t *) malloc(t * m * sizeof(size_t));

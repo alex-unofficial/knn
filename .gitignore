@@ -4,5 +4,8 @@
 bin/*
 build/*
 
+# MPI host file
+hostfile
+
 # valgrind files
 vgcore.*

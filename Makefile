@@ -1,5 +1,5 @@
 # The C Compiler
-CC=gcc
+MPICC=mpicc
 
 # Packages used and Compiler flags
 PACKAGES=gsl
@@ -47,11 +47,11 @@ test: tests
 tests: $(addprefix $(BIN_DIR)/,$(TESTS))
 
 $(BIN_DIR)/%: $(BUILD_DIR)/%.o $(OBJS) | $(BIN_DIR)
-	$(CC) $(CPPFLAGS) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+	$(MPICC) $(CPPFLAGS) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 .PRECIOUS: $(BUILD_DIR)/%.o
 $(BUILD_DIR)/%.o: %.c | $(BUILD_DIR)
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+	$(MPICC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 # Creating the directories
 $(BIN_DIR) $(BUILD_DIR):
