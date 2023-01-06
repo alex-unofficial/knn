@@ -4,8 +4,8 @@ CC=gcc
 # Packages used and Compiler flags
 PACKAGES=gsl
 
-CFLAGS=`pkgconf --cflags-only-other $(PACKAGES)` -fopenmp -march=native -mavx -std=gnu99 -O3 
-LDFLAGS=`pkgconf --libs $(PACKAGES)`
+CFLAGS=$(shell pkgconf --cflags-only-other $(PACKAGES)) -fopenmp -march=native -mavx -std=gnu99 -O3 
+LDFLAGS=$(shell pkgconf --libs $(PACKAGES))
 
 # The various directories used in the project
 BUILD_DIR	?= ./build
@@ -28,7 +28,7 @@ DEPS := $(patsubst %.o, %.d, $(OBJS) $(TEST_OBJS))
 
 # Include directories for the compiler
 INC_DIRS := $(shell find $(SRC_DIR) -type d)
-INC_FLAGS := $(addprefix -I,$(INC_DIRS)) `pkgconf --cflags-only-I $(PACKAGES)`
+INC_FLAGS := $(addprefix -I,$(INC_DIRS)) $(shell pkgconf --cflags-only-I $(PACKAGES))
 
 # Setting VPATH to include the source file directories
 SPACE= 
