@@ -1,7 +1,11 @@
-# The C Compiler and Compiler flags
+# The C Compiler
 CC=gcc
-CFLAGS=-fopenmp -march=native -mavx -std=gnu99 -O3
-LDFLAGS=-lgsl -lgslcblas -lm
+
+# Packages used and Compiler flags
+PACKAGES=gsl
+
+CFLAGS=`pkgconf --cflags-only-other $(PACKAGES)` -fopenmp -march=native -mavx -std=gnu99 -O3 
+LDFLAGS=`pkgconf --libs $(PACKAGES)`
 
 # The various directories used in the project
 BUILD_DIR	?= ./build
@@ -24,7 +28,7 @@ DEPS := $(patsubst %.o, %.d, $(OBJS) $(TEST_OBJS))
 
 # Include directories for the compiler
 INC_DIRS := $(shell find $(SRC_DIR) -type d)
-INC_FLAGS := $(addprefix -I,$(INC_DIRS))
+INC_FLAGS := $(addprefix -I,$(INC_DIRS)) `pkgconf --cflags-only-I $(PACKAGES)`
 
 # Setting VPATH to include the source file directories
 SPACE= 
