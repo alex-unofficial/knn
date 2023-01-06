@@ -1,6 +1,6 @@
 # The C Compiler and Compiler flags
 CC=gcc
-CFLAGS=-fopenmp -march=native -mavx -O3
+CFLAGS=-fopenmp -march=native -mavx -std=c99 -O3
 LDFLAGS=-lgsl -lgslcblas -lm
 
 # The various directories used in the project
