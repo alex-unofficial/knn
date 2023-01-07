@@ -17,5 +17,10 @@ typedef float elem_t;
 #define VEC_SUM(v) ((v)[0] + (v)[1] + (v)[2] + (v)[3] + (v)[4] + (v)[5] + (v)[6] + (v)[7])
 
 #define min(x, y) (((x) < (y)) ? (x) : (y))
+#define max(x, y) (((x) > (y)) ? (x) : (y))
+
+#define SWAP(a, b) {typeof(a) temp = (a); (a) = (b); (b) = temp;}
+
+#define mod(x, N) (((x) < 0) ? ((x) % (N) + (N)) : ((x) % (N)))
 
 #endif
