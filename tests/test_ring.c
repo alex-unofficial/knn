@@ -15,7 +15,7 @@ int main(int argc, char** argv) {
 
 	if(r == 0) printf("========== testing ring =========\n");
 
-	int N = 1000;
+	int N = 1000000;
 	int n_max = (int)ceil((float)N / (float)p);
 	
 	int *X = (int *) malloc(n_max * sizeof(int));
@@ -33,6 +33,13 @@ int main(int argc, char** argv) {
 
 	int r_send = mod(r - 1, p);
 	int r_recv = mod(r + 1, p);
+
+	if(r == 0) {
+		printf("N = %d\n", N);
+		printf("p = %d\n", p);
+		printf("n = %d\n", n_max);
+		printf("\n");
+	}
 
 	if(r == 0) printf("checking for errors:\n");
 	MPI_Barrier(MPI_COMM_WORLD);
@@ -67,7 +74,10 @@ int main(int argc, char** argv) {
 	int total_errors;
 	MPI_Reduce(&errors, &total_errors, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 
-	if(r == 0) printf("found %d errors\n", total_errors);
+	if(r == 0) {
+		printf("found %d errors\n", total_errors);
+		printf("\n");
+	}
 
     // Finalize the MPI environment.
     MPI_Finalize();
