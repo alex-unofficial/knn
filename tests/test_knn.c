@@ -25,10 +25,10 @@ int main(int argc, char **argv) {
 
 	printf("========== testing knn ==========\n");
 
-	int side_len = 10;
-	int d = 4;
+	int side_len = 100;
+	int d = 3;
 
-	int t = 100;
+	int t = 4096;
 
 	size_t n = int_pow(side_len, d);
 	int k = 2 * d + 1;
