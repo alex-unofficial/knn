@@ -25,12 +25,12 @@ int main(int argc, char **argv) {
 
 	printf("========== testing knn ==========\n");
 
-	int side_len = 100;
-	int d = 2;
+	int side_len = 10;
+	int d = 4;
 
 	int t = 100;
 
-	int n = int_pow(side_len, d);
+	size_t n = int_pow(side_len, d);
 	int k = 2 * d + 1;
 
 	printf("side = %d\nn = %d\nd = %d\nk = %d\n",side_len, n, d, k);
@@ -38,14 +38,12 @@ int main(int argc, char **argv) {
 	
 	elem_t *X = create_matrix(n, d);
 
-	// this works only for d = 2
-	for(int x = 0 ; x < side_len ; x++) {
-		for(int y = 0 ; y < side_len ; y++) {
+	for(size_t i = 0 ; i < n ; i++) {
 
-			int i = x * side_len + y;
-
-			MATRIX_ELEM(X, i, 0, n, d) = (elem_t) x;
-			MATRIX_ELEM(X, i, 1, n, d) = (elem_t) y;
+		size_t idx = i;
+		for(int j = 0 ; j < d ; j++) {
+			MATRIX_ELEM(X, i, j, n, d) = (elem_t) (idx % side_len);
+			idx /= side_len;
 		}
 	}
 
@@ -54,29 +52,68 @@ int main(int argc, char **argv) {
 	printf("checking for errors:\n");
 
 	int errors = 0;
-	for(int i = 0 ; i < n ; i++) {
-		int x = (int) MATRIX_ELEM(X, i, 0, n, d);
-		int y = (int) MATRIX_ELEM(X, i, 1, n, d);
+	for(size_t i = 0 ; i < n ; i++) {
+		int coords[d];
+		for(int j = 0 ; j < d ; j++)
+			coords[j] = (int) MATRIX_ELEM(X, i, j, n, d);
 
 		size_t *knn_i = MATRIX_ROW(res->n_idx, i, n, k);
 
 		{ // first nearest neighbour
-			int n_x = (int) MATRIX_ELEM(X, knn_i[0], 0, n, d);
-			int n_y = (int) MATRIX_ELEM(X, knn_i[0], 1, n, d);
+			int n_coords[d];
+			for(int j = 0 ; j < d ; j++)
+				n_coords[j] = (int) MATRIX_ELEM(X, knn_i[0], j, n, d);
 
-			if(!(x == n_x && y == n_y))
-				printf("%3d: error at (%2d, %2d): first neighbout is (%2d, %2d)\n", ++errors, x, y, n_x, n_y);
+			int error = 0;
+			for(int j = 0 ; j < d ; j++) {
+				if(n_coords[j] != coords[j]) {
+					error = 1;
+					break;
+				}
+			}
+
+			if(error) {
+				printf("%3d: error at [ ", ++errors);
+				for(int j = 0 ; j < d ; j++)
+					printf("%2d ", coords[j]);
+
+				printf("]: first neighbour is [ ");
+				for(int j = 0 ; j < d ; j++)
+					printf("%2d ", n_coords[j]);
+
+				printf("]\n");
+			}
 		}
 
-		if((0 < x && x < side_len - 1) && (0 < y && y < side_len - 1)) {
+		int is_internal = 1;
+		for(int j = 0 ; j < d ; j++) {
+			if(coords[j] == 0 || coords[j] == side_len - 1)
+				is_internal = 0;
+		}
 
-			for(int j = 1 ; j < k ; j++) {
-				int n_x = (int) MATRIX_ELEM(X, knn_i[j], 0, n, d);
-				int n_y = (int) MATRIX_ELEM(X, knn_i[j], 1, n, d);
+		if(is_internal) {
 
-				if(!((abs(x - n_x) == 1 && abs(y - n_y) == 0) || (abs(y - n_y) == 1 && abs(x - n_x) == 0)))
-					printf("%3d: error at (%2d, %2d): neighbour %d is (%2d, %2d)\n", 
-							++errors, x, y, j, n_x, n_y);
+			for(int l = 1 ; l < k ; l++) {
+				int n_coords[d];
+				for(int j = 0 ; j < d ; j++)
+					n_coords[j] = (int) MATRIX_ELEM(X, knn_i[l], j, n, d);
+
+				int sum = 0;
+				for(int j = 0 ; j < d ; j++) {
+					sum += abs(coords[j] - n_coords[j]);
+				}
+
+				if(sum != 1) {
+					printf("%3d: error at [ ", ++errors);
+					for(int j = 0 ; j < d ; j++)
+						printf("%2d ", coords[j]);
+
+					printf("]: neighbour %d is [ ", l);
+					for(int j = 0 ; j < d ; j++)
+						printf("%2d ", n_coords[j]);
+
+					printf("]\n");
+				}
 			}
 		}
 	}
