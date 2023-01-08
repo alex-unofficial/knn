@@ -6,8 +6,8 @@
 #include "matrix.h"
 #include "def.h"
 
-int int_pow(int base, int power) {
-	int result = 1;
+size_t int_pow(int base, int power) {
+	size_t result = 1;
 
 	while(power > 0) {
 		if(power & 0x01) {
