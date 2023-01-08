@@ -4,6 +4,9 @@
 bin/*
 build/*
 
+# data files
+data/*
+
 # MPI host file
 hostfile
 
