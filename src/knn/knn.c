@@ -7,11 +7,7 @@
 #include "matrix.h"
 #include "def.h"
 
-#ifndef MAX_MEM
-#define MAX_MEM (1 << 30)
-#endif
-
-knn_result *knn(const elem_t *X, size_t n, const elem_t *Y, size_t m, int d, int k) {
+knn_result *knn(const elem_t *X, size_t n, const elem_t *Y, size_t m, int d, int k, int t) {
 
 	// the result will be stored in res.
 	knn_result *res = (knn_result *) malloc(sizeof(knn_result));
@@ -26,9 +22,7 @@ knn_result *knn(const elem_t *X, size_t n, const elem_t *Y, size_t m, int d, int
 	int threadnum = omp_get_max_threads();
 	omp_set_num_threads(threadnum);
 
-	int t = min(MAX_MEM / (m * (sizeof(size_t) + sizeof(elem_t))), n);
-
-	elem_t *D = create_matrix(t, m);
+	elem_t *D = (elem_t *) malloc(t * m * sizeof(elem_t));
 	size_t *ind = (size_t *) malloc(t * m * sizeof(size_t));
 
 	// slice X into parts of size t in order to not use a lot of memory.
@@ -71,7 +65,7 @@ knn_result *knn(const elem_t *X, size_t n, const elem_t *Y, size_t m, int d, int
 		}
 	}
 
-	delete_matrix(D);
+	free(D);
 	free(ind);
 
 	return res;

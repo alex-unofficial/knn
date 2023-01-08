@@ -28,6 +28,8 @@ int main(int argc, char **argv) {
 	int side_len = 100;
 	int d = 2;
 
+	int t = 100;
+
 	int n = int_pow(side_len, d);
 	int k = 2 * d + 1;
 
@@ -47,7 +49,7 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	knn_result *res = knn(X, n, X, n, d, k);
+	knn_result *res = knn(X, n, X, n, d, k, t);
 
 	printf("checking for errors:\n");
 
