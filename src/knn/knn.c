@@ -22,6 +22,8 @@ knn_result *knn(const elem_t *X, size_t n, const elem_t *Y, size_t m, int d, int
 	int threadnum = omp_get_max_threads();
 	omp_set_num_threads(threadnum);
 
+	t = min(t, n);
+
 	elem_t *D = (elem_t *) malloc(t * m * sizeof(elem_t));
 	size_t *ind = (size_t *) malloc(t * m * sizeof(size_t));
 
