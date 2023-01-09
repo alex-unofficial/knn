@@ -156,8 +156,6 @@ int main(int argc, char **argv) {
 			break;
 	}
 
-	if(rank == ROOT) printf("initialized matrices\n");
-
 	/* also initialize Y = X */
 	int m = n;
 
