@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
 	size_t ind[N];
 
 	for(int i = 0 ; i < N ; i++) arr[i] = (elem_t) (i + 1);
-	gen_indices(ind, N);
+	gen_indices(ind, 0, N);
 
 	for(int i = 0 ; i < N ; i++) {
 		int j = rand() % N;
@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
 	elem_t arr2[] = {1.0, 2.0, 3.0, 3.0, 4.0, 5.0, 6.0};
 	size_t ind2[N];
 
-	gen_indices(ind2, N);
+	gen_indices(ind2, 0, N);
 
 	for(int i = 0 ; i < N ; i++) {
 		int j = rand() % N;

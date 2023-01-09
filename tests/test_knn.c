@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
 
 	printf("========== testing knn ==========\n");
 
-	int side_len = 100;
+	int side_len = 10;
 	int d = 3;
 
 	int t = 4096;
@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	knn_result *res = knn(X, n, X, n, d, k, t);
+	knn_result *res = knn(X, n, X, 0, n, d, k, t);
 
 	printf("checking for errors:\n");
 

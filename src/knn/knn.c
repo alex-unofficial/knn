@@ -7,7 +7,7 @@
 #include "matrix.h"
 #include "def.h"
 
-knn_result *knn(const elem_t *X, size_t n, const elem_t *Y, size_t m, int d, int k, int t) {
+knn_result *knn(const elem_t *X, size_t n, const elem_t *Y, size_t Y_begin, size_t m, int d, int k, int t) {
 
 	// the result will be stored in res.
 	knn_result *res = (knn_result *) malloc(sizeof(knn_result));
@@ -44,7 +44,7 @@ knn_result *knn(const elem_t *X, size_t n, const elem_t *Y, size_t m, int d, int
 			elem_t *Di = MATRIX_ROW(D, tid, t, m);
 			size_t *ind_i = MATRIX_ROW(ind, tid, t, m);
 
-			gen_indices(ind_i, m);
+			gen_indices(ind_i, Y_begin, m);
 
 			// using QuickSelect to find the k smallest elements in Di
 			qselect(k, Di, ind_i, m);

@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-void gen_indices(size_t *ind, size_t size) {
-	for(size_t i = 0 ; i < size ; i++) ind[i] = i;
+void gen_indices(size_t *ind, size_t begin_idx, size_t size) {
+	for(size_t i = 0 ; i < size ; i++) ind[i] = begin_idx + i;
 }
 
 elem_t qselect(size_t k, elem_t *arr, size_t *ind, size_t size) {
