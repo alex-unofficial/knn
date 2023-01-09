@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <errno.h>
 #include <math.h>
 
 #include <mpi.h>
@@ -43,9 +45,10 @@ int main(int argc, char **argv) {
 			error = 1;
 			fprintf(stderr, "not enough arguments.\nusage: %s file.dat k N d\n", argv[0]);
 		}
-
-		MPI_Bcast(&error, 1, MPI_INT, ROOT, MPI_COMM_WORLD);
 	}
+
+	MPI_Bcast(&error, 1, MPI_INT, ROOT, MPI_COMM_WORLD);
+	MPI_Barrier(MPI_COMM_WORLD);
 
 	if(error) {
 		MPI_Finalize();
@@ -73,7 +76,7 @@ int main(int argc, char **argv) {
 
 	int n = i_end - i_begin;
 
-	size_t t = 100; // TODO: change this
+	size_t t = 4096; // TODO: change this
 	
 	/* initialize the matrices */
 	
@@ -82,10 +85,24 @@ int main(int argc, char **argv) {
 	MPI_Status send_status, recv_status;
 
 	switch(rank) {
-		case ROOT:
+		case ROOT: ;
 			/* root process reads from filename and sends 
 			 * data in the ring to be distrubuted */
 			FILE *file = fopen(filename, "r");
+
+			error = 0;
+			if(file == NULL) {
+				error = errno;
+			}
+
+			MPI_Bcast(&error, 1, MPI_INT, ROOT, MPI_COMM_WORLD);
+			MPI_Barrier(MPI_COMM_WORLD);
+
+			if(error) {
+				fprintf(stderr, "%s\n", strerror(error));
+				MPI_Finalize();
+				exit(error);
+			}
 
 			for(int r = 0 ; r < n_processes ; r++) {
 				int r_begin = r * N / n_processes;
@@ -99,7 +116,6 @@ int main(int argc, char **argv) {
 				MPI_Isend(X, r_n * d, MPI_ELEM, r_send, INIT_MATRIX, MPI_COMM_WORLD, &send_req);
 
 				SWAP(X, Y);
-
 			}
 
 			fclose(file);
@@ -107,9 +123,19 @@ int main(int argc, char **argv) {
 			MPI_Recv(X, n_max * d, MPI_ELEM, r_recv, INIT_MATRIX, MPI_COMM_WORLD, &recv_status);
 			MPI_Get_count(&recv_status, MPI_ELEM, &recv_size);
 
+			MPI_Wait(&send_req, &send_status);
+
 			break;
 
-		default:
+		default: ;
+			MPI_Bcast(&error, 1, MPI_INT, ROOT, MPI_COMM_WORLD);
+			MPI_Barrier(MPI_COMM_WORLD);
+
+			if(error) {
+				MPI_Finalize();
+				exit(error);
+			}
+
 			/* other processes pass on the received data until
 			 * they recieve their own */
 			for(int r = 0 ; r < rank ; r++) {
@@ -125,22 +151,12 @@ int main(int argc, char **argv) {
 			MPI_Recv(X, n_max * d, MPI_ELEM, r_recv, INIT_MATRIX, MPI_COMM_WORLD, &recv_status);
 			MPI_Get_count(&recv_status, MPI_ELEM, &recv_size);
 
+			MPI_Wait(&send_req, &send_status);
+
 			break;
 	}
 
-	error = 0;
-	if(recv_size != n * d) {
-		error = 1;
-		MPI_Bcast(&error, 1, MPI_INT, rank, MPI_COMM_WORLD);
-	}
-
-	MPI_Barrier(MPI_COMM_WORLD);
-
-	if(error) {
-		if(rank == ROOT) fprintf(stderr, "recieved size different than expected.\n");
-		MPI_Finalize();
-		exit(error);
-	}
+	if(rank == ROOT) printf("initialized matrices\n");
 
 	/* also initialize Y = X */
 	int m = n;
@@ -199,7 +215,7 @@ int main(int argc, char **argv) {
 
 	/* print results */
 	switch(rank) {
-		case ROOT:
+		case ROOT: ;
 			/* root process recieves the results of the other 
 			 * processes and prints them one by one */
 			for(int r = 0 ; r < n_processes - 1 ; r++) {
@@ -229,7 +245,7 @@ int main(int argc, char **argv) {
 
 			break;
 
-		default:
+		default: ;
 			/* other processes send their data to the next process
 			 * then pass on the data from all previous processes */
 			send_req = MPI_REQUEST_NULL;
