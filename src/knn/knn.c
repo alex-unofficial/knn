@@ -7,7 +7,11 @@
 #include "matrix.h"
 #include "def.h"
 
-knn_result *knn(const elem_t *X, size_t n, const elem_t *Y, size_t Y_begin, size_t m, int d, int k, int t) {
+knn_result *knn(
+	const elem_t *X, size_t n, 
+	const elem_t *Y, size_t Y_begin, size_t m, 
+	size_t d, size_t k, size_t t,
+	knn_result **prev_result) {
 
 	// the result will be stored in res.
 	knn_result *res = (knn_result *) malloc(sizeof(knn_result));
@@ -59,16 +63,46 @@ knn_result *knn(const elem_t *X, size_t n, const elem_t *Y, size_t Y_begin, size
 				}
 			}
 
+
 			// store the results in res
-			for(size_t j = 0 ; j < k ; j++) {
-				MATRIX_ELEM(res->n_dist, X_begin + tid, j, n, k) = Di[j];
-				MATRIX_ELEM(res->n_idx, X_begin + tid, j, n, k) = ind_i[j];
+			if(*prev_result == NULL) {
+				for(size_t j = 0 ; j < k ; j++) {
+					MATRIX_ELEM(res->n_dist, X_begin + tid, j, n, k) = Di[j];
+					MATRIX_ELEM(res->n_idx, X_begin + tid, j, n, k) = ind_i[j];
+				}
+			} else {
+				elem_t *prev_dist = MATRIX_ROW((*prev_result)->n_dist, X_begin + tid, n, k);
+				size_t *prev_idx = MATRIX_ROW((*prev_result)->n_idx, X_begin + tid, n, k);
+
+				size_t p_idx = 0;
+				size_t d_idx = 0;
+
+				for(size_t j = 0 ; j < k ; j++) {
+					if(prev_dist[p_idx] <= Di[d_idx]) {
+						MATRIX_ELEM(res->n_dist, X_begin + tid, j, n, k) = prev_dist[p_idx];
+						MATRIX_ELEM(res->n_idx, X_begin + tid, j, n, k) = prev_idx[p_idx];
+
+						p_idx += 1;
+
+					} else {
+						MATRIX_ELEM(res->n_dist, X_begin + tid, j, n, k) = Di[d_idx];
+						MATRIX_ELEM(res->n_idx, X_begin + tid, j, n, k) = ind_i[d_idx];
+
+						d_idx += 1;
+					}
+				}
 			}
 		}
 	}
 
+
 	free(D);
 	free(ind);
+
+
+	if(*prev_result != NULL)
+		delete_knn(*prev_result);
+
 
 	return res;
 }

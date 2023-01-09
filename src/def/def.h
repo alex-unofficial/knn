@@ -4,6 +4,7 @@
 #include <immintrin.h>
 
 typedef float elem_t;
+#define MPI_ELEM MPI_FLOAT
 
 #define VEC_T __m256
 #define VEC_SIZE 8

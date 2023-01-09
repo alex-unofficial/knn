@@ -47,7 +47,8 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	knn_result *res = knn(X, n, X, 0, n, d, k, t);
+	knn_result *res = NULL;
+	res = knn(X, n, X, 0, n, d, k, t, &res);
 
 	printf("checking for errors:\n");
 

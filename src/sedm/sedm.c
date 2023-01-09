@@ -1,7 +1,7 @@
+#include "sedm.h"
+
 #include <omp.h>
 #include <gsl/gsl_cblas.h>
-
-#include "sedm.h"
 
 #include "matrix.h"
 #include "def.h"
@@ -121,4 +121,5 @@ void sedm_simp(const elem_t *X, size_t n, const elem_t *Y, size_t m, size_t d, e
 			MATRIX_ELEM(distance_matrix, i, j, n, m) = sum;
 		}
 	}
+
 }

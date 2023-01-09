@@ -7,6 +7,9 @@ PACKAGES=gsl
 CFLAGS=$(shell pkgconf --cflags-only-other $(PACKAGES)) -fopenmp -march=native -mavx -std=gnu99 -O3 
 LDFLAGS=$(shell pkgconf --libs $(PACKAGES))
 
+# The name of the executable
+EXEC_NAME=mpiknn
+
 # The various directories used in the project
 BUILD_DIR	?= ./build
 BIN_DIR		?= ./bin
@@ -21,7 +24,7 @@ SRCS := $(notdir $(shell find $(SRC_DIR) -name *.c))
 TESTS := $(basename $(notdir $(shell find $(TESTS_DIR) -name *.c)))
 
 # The object files and dependency files
-OBJS := $(patsubst %.c, $(BUILD_DIR)/%.o, $(SRCS))
+OBJS := $(patsubst %.c, $(BUILD_DIR)/%.o, $(filter-out $(EXEC_NAME).c, $(SRCS)))
 TEST_OBJS := $(patsubst %, $(BUILD_DIR)/%.o, $(TESTS))
 
 DEPS := $(patsubst %.o, %.d, $(OBJS) $(TEST_OBJS))
@@ -37,9 +40,11 @@ VPATH=$(TESTS_DIR):$(subst $(SPACE),:,$(INC_DIRS))
 # C preprocessor flags
 CPPFLAGS=$(INC_FLAGS) -MMD -MP
 
-.PHONY: default test tests clean
+.PHONY: default all test tests clean
 
-default: tests
+default: $(BIN_DIR)/$(EXEC_NAME)
+
+all: $(BIN_DIR)/$(EXEC_NAME) tests
 
 test: tests
 	@$(TOOLS_DIR)/runtests.sh
