@@ -83,7 +83,19 @@ int main(int argc, char **argv) {
 
 	int n = i_end - i_begin;
 
-	size_t t = 4096; // TODO: change this
+	size_t max_mem = (1 << 30);
+
+	size_t t = min((max_mem/n_max - 3*d*sizeof(elem_t) - 2*k*(sizeof(elem_t) + sizeof(size_t)))
+			/ (sizeof(elem_t) + sizeof(size_t)), n_max);
+
+
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	if(t < 1) {
+		if(rank == ROOT) fprintf(stderr, "not enough memory\n");
+		MPI_Finalize();
+		exit(ENOMEM);
+	}
 	
 	/* initialize the matrices */
 	
@@ -200,7 +212,7 @@ int main(int argc, char **argv) {
 			/* print information */
 			double time_elapsed = (t_end.tv_sec - t_begin.tv_sec) + (t_end.tv_nsec - t_begin.tv_nsec) / 1e9f;
 
-			printf("%lu %lu %lu %d %d %lu %lf\n", N, d, k, n_processes, n_threads, n_max, time_elapsed);
+			printf("%lu %lu %lu %d %d %lu %lu %lf\n", N, d, k, n_processes, n_threads, n_max, t, time_elapsed);
 			
 			/* create arrays to be used for printing */
 			elem_t *dists= (elem_t *) malloc(n_max * k * sizeof(elem_t));
