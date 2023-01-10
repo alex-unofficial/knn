@@ -83,7 +83,7 @@ int main(int argc, char **argv) {
 
 	int n = i_end - i_begin;
 
-	size_t max_mem = 1.5e9l;
+	size_t max_mem = 1.5 * GB;
 
 	size_t t = min((max_mem/n_max - 3*d*sizeof(elem_t) - 2*k*(sizeof(elem_t) + sizeof(size_t)))
 			/ (sizeof(elem_t) + sizeof(size_t)), n_max);

@@ -40,4 +40,8 @@ typedef float elem_t;
 
 #define mod(x, N) (((x) < 0) ? ((x) % (N) + (N)) : ((x) % (N)))
 
+#define KB 1024lu
+#define MB 1048576lu
+#define GB 1073741824lu
+
 #endif
