@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+
+#include <time.h>
+
 #include <math.h>
 
 #include <mpi.h>
@@ -67,6 +70,9 @@ int main(int argc, char **argv) {
 
 	int r_send = mod(rank - 1, n_processes);
 	int r_recv = mod(rank + 1, n_processes);
+
+	int n_threads = omp_get_max_threads();
+	omp_set_num_threads(n_threads);
 
 	elem_t *X = create_matrix(n_max, d);
 	elem_t *Y = create_matrix(n_max, d);
@@ -151,7 +157,8 @@ int main(int argc, char **argv) {
 	if(rank == ROOT) MPI_Wait(&send_req, &send_status);
 
 	MPI_Barrier(MPI_COMM_WORLD);
-	// TODO: timer starts here
+	struct timespec t_begin, t_end;
+	clock_gettime(CLOCK_MONOTONIC, &t_begin);
 
 	/* perform knn */
 	knn_result *res = NULL;
@@ -180,7 +187,7 @@ int main(int argc, char **argv) {
 	}
 
 	MPI_Barrier(MPI_COMM_WORLD);
-	// TODO: timer ends here
+	clock_gettime(CLOCK_MONOTONIC, &t_end);
 
 	/* free matrices */
 	delete_matrix(X);
@@ -190,12 +197,15 @@ int main(int argc, char **argv) {
 	/* print results */
 	switch(rank) {
 		case ROOT: ;
+			/* print information */
+			double time_elapsed = (t_end.tv_sec - t_begin.tv_sec) + (t_end.tv_nsec - t_begin.tv_nsec) / 1e9f;
+
+			printf("%lu %lu %lu %d %d %lu %lf\n", N, d, k, n_processes, n_threads, n_max, time_elapsed);
+			
 			/* create arrays to be used for printing */
-			//elem_t *dists = res->n_dist;
 			elem_t *dists= (elem_t *) malloc(n_max * k * sizeof(elem_t));
 			elem_t *dists_swp = (elem_t *) malloc(n_max * k * sizeof(elem_t));
 
-			//size_t *idxs = res->n_idx;
 			size_t *idxs= (size_t *) malloc(n_max * k * sizeof(size_t));
 			size_t *idxs_swp = (size_t *) malloc(n_max * k * sizeof(size_t));
 
