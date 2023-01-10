@@ -15,7 +15,8 @@
 
 #define INIT_MATRIX 1
 #define KNN 2
-#define PRINTING 3
+#define PRINTING_DIST 3
+#define PRINTING_IDX 4
 
 int read_matrix(FILE *file, elem_t *X, size_t n, size_t d) {
 	for(size_t i = 0 ; i < n ; i++) {
@@ -86,8 +87,6 @@ int main(int argc, char **argv) {
 
 	switch(rank) {
 		case ROOT: ;
-			/* root process reads from filename and sends 
-			 * data in the ring to be distrubuted */
 			FILE *file = fopen(filename, "r");
 
 			error = 0;
@@ -104,26 +103,25 @@ int main(int argc, char **argv) {
 				exit(error);
 			}
 
-			for(int r = 0 ; r < n_processes ; r++) {
+			/* root process reads its own data from the input file */
+			read_matrix(file, X, n, d);
+
+			/* then it reads from the input file and sends 
+			 * data to the corresponding process */
+			for(int r = 1 ; r < n_processes ; r++) {
 				int r_begin = r * N / n_processes;
 				int r_end = min((r + 1) * N / n_processes, N);
 
 				int r_n = r_end - r_begin;
 
-				read_matrix(file, X, r_n, d);
+				read_matrix(file, Y, r_n, d);
 
 				MPI_Wait(&send_req, &send_status);
-				MPI_Isend(X, r_n * d, MPI_ELEM, r_send, INIT_MATRIX, MPI_COMM_WORLD, &send_req);
+				MPI_Isend(Y, r_n * d, MPI_ELEM_T, r, INIT_MATRIX, MPI_COMM_WORLD, &send_req);
 
-				SWAP(X, Y);
+				SWAP(Y, Z);
 			}
-
 			fclose(file);
-
-			MPI_Recv(X, n_max * d, MPI_ELEM, r_recv, INIT_MATRIX, MPI_COMM_WORLD, &recv_status);
-			MPI_Get_count(&recv_status, MPI_ELEM, &recv_size);
-
-			MPI_Wait(&send_req, &send_status);
 
 			break;
 
@@ -136,22 +134,8 @@ int main(int argc, char **argv) {
 				exit(error);
 			}
 
-			/* other processes pass on the received data until
-			 * they recieve their own */
-			for(int r = 0 ; r < rank ; r++) {
-				MPI_Recv(X, n_max * d, MPI_ELEM, r_recv, INIT_MATRIX, MPI_COMM_WORLD, &recv_status);
-				MPI_Get_count(&recv_status, MPI_ELEM, &recv_size);
-
-				MPI_Wait(&send_req, &send_status);
-				MPI_Isend(X, recv_size, MPI_ELEM, r_send, INIT_MATRIX, MPI_COMM_WORLD, &send_req);
-				
-				SWAP(X, Y);
-			}
-
-			MPI_Recv(X, n_max * d, MPI_ELEM, r_recv, INIT_MATRIX, MPI_COMM_WORLD, &recv_status);
-			MPI_Get_count(&recv_status, MPI_ELEM, &recv_size);
-
-			MPI_Wait(&send_req, &send_status);
+			/* other processes receive their data from the root process */
+			MPI_Recv(X, n_max * d, MPI_ELEM_T, ROOT, INIT_MATRIX, MPI_COMM_WORLD, &recv_status);
 
 			break;
 	}
@@ -163,16 +147,19 @@ int main(int argc, char **argv) {
 	for(size_t i = 0 ; i < m * d ; i++) {
 		Y[i] = X[i];
 	}
+	
+	if(rank == ROOT) MPI_Wait(&send_req, &send_status);
 
 	MPI_Barrier(MPI_COMM_WORLD);
+	// TODO: timer starts here
 
 	/* perform knn */
 	knn_result *res = NULL;
 
 	for(int q = 0 ; q < n_processes ; q++) {
 		/* initiate non-blocking send and recieve */
-		MPI_Isend(Y, m * d, MPI_ELEM, r_send, KNN, MPI_COMM_WORLD, &send_req);
-		MPI_Irecv(Z, n_max * d, MPI_ELEM, r_recv, KNN, MPI_COMM_WORLD, &recv_req);
+		MPI_Isend(Y, m * d, MPI_ELEM_T, r_send, KNN, MPI_COMM_WORLD, &send_req);
+		MPI_Irecv(Z, n_max * d, MPI_ELEM_T, r_recv, KNN, MPI_COMM_WORLD, &recv_req);
 
 		/* calculate the appropriate Y_idx */
 		int r = mod(rank + q, n_processes);
@@ -185,7 +172,7 @@ int main(int argc, char **argv) {
 		MPI_Wait(&send_req, &send_status);
 		MPI_Wait(&recv_req, &recv_status);
 
-		MPI_Get_count(&recv_status, MPI_ELEM, &recv_size);
+		MPI_Get_count(&recv_status, MPI_ELEM_T, &recv_size);
 		m = recv_size / d;
 
 		/* swap Y and Z pointer locations*/
@@ -193,83 +180,85 @@ int main(int argc, char **argv) {
 	}
 
 	MPI_Barrier(MPI_COMM_WORLD);
+	// TODO: timer ends here
 
 	/* free matrices */
 	delete_matrix(X);
 	delete_matrix(Y);
 	delete_matrix(Z);
 
-	/* create arrays to be used for printing */
-	elem_t *dists = (elem_t *) malloc(n_max * k * sizeof(elem_t));
-	elem_t *swp = (elem_t *) malloc(n_max * k * sizeof(elem_t));
-
-	#pragma omp parallel for simd
-	for(size_t i = 0 ; i < n * k ; i++) {
-		dists[i] = res->n_dist[i];
-	}
-
-	/* free knn results */
-	delete_knn(res);
-
 	/* print results */
 	switch(rank) {
 		case ROOT: ;
+			/* create arrays to be used for printing */
+			//elem_t *dists = res->n_dist;
+			elem_t *dists= (elem_t *) malloc(n_max * k * sizeof(elem_t));
+			elem_t *dists_swp = (elem_t *) malloc(n_max * k * sizeof(elem_t));
+
+			//size_t *idxs = res->n_idx;
+			size_t *idxs= (size_t *) malloc(n_max * k * sizeof(size_t));
+			size_t *idxs_swp = (size_t *) malloc(n_max * k * sizeof(size_t));
+
+			#pragma omp parallel for simd
+			for(int i = 0 ; i < n * k ; i++) {
+				dists[i] = res->n_dist[i];
+				idxs[i] = res->n_idx[i];
+			}
+
+			MPI_Request recv_dist, recv_idx;
+			MPI_Status dist_status, idx_status;
+
 			/* root process recieves the results of the other 
 			 * processes and prints them one by one */
-			for(int r = 0 ; r < n_processes - 1 ; r++) {
-				MPI_Irecv(swp, n_max * k, MPI_ELEM, r_recv, PRINTING, MPI_COMM_WORLD, &recv_req);
+			for(int r = 1 ; r < n_processes ; r++) {
+				MPI_Irecv(dists_swp, n_max * k, MPI_ELEM_T, r, PRINTING_DIST, MPI_COMM_WORLD, &recv_dist);
+				MPI_Irecv(idxs_swp, n_max * k, MPI_SIZE_T, r, PRINTING_IDX, MPI_COMM_WORLD, &recv_idx);
 
 				for(size_t i = 0 ; i < n ; i++) {
 					for(size_t j = 0 ; j < k ; j++) {
-						printf("%0.2f ", MATRIX_ELEM(dists, i, j, n, k));
+						printf("%lu:%0.2f ", 
+								MATRIX_ELEM(idxs, i, j, n, k), MATRIX_ELEM(dists, i, j, n, k));
 					}
 					printf("\n");
 				}
 
-				MPI_Wait(&recv_req, &recv_status);
+				MPI_Wait(&recv_dist, &dist_status);
+				MPI_Wait(&recv_idx, &idx_status);
 
-				MPI_Get_count(&recv_status, MPI_ELEM, &recv_size);
+				MPI_Get_count(&dist_status, MPI_ELEM_T, &recv_size);
+
 				n = recv_size / k;
 
-				SWAP(dists, swp);
-			}
-
-			for(size_t i = 0 ; i < n ; i++) {
+				SWAP(dists, dists_swp);
+				SWAP(idxs, idxs_swp);
+				
+			} for(size_t i = 0 ; i < n ; i++) {
 				for(size_t j = 0 ; j < k ; j++) {
-					printf("%0.2f ", MATRIX_ELEM(dists, i, j, n, k));
+					printf("%lu:%0.2f ", 
+							MATRIX_ELEM(idxs, i, j, n, k), MATRIX_ELEM(dists, i, j, n, k));
 				}
 				printf("\n");
 			}
 
+			/* free printing arrays */
+			free(dists_swp);
+			free(idxs_swp);
+
 			break;
 
 		default: ;
-			/* other processes send their data to the next process
-			 * then pass on the data from all previous processes */
-			send_req = MPI_REQUEST_NULL;
-			for(int r = 0 ; r < n_processes - rank - 1 ; r++) {
-				MPI_Wait(&send_req, &send_status);
-				MPI_Isend(dists, n * k, MPI_ELEM, r_send, PRINTING, MPI_COMM_WORLD, &send_req);
-
-				MPI_Recv(swp, n_max * k, MPI_ELEM, r_recv, PRINTING, MPI_COMM_WORLD, &recv_status);
-
-				MPI_Get_count(&recv_status, MPI_ELEM, &recv_size);
-				n = recv_size / k;
-
-				SWAP(dists, swp);
-			}
-
+			/* other processes send their data to the root process */
+			MPI_Isend(res->n_dist, n * k, MPI_ELEM_T, ROOT, PRINTING_DIST, MPI_COMM_WORLD, &send_req);
+			MPI_Send(res->n_idx, n * k, MPI_SIZE_T, ROOT, PRINTING_IDX, MPI_COMM_WORLD);
 			MPI_Wait(&send_req, &send_status);
-			MPI_Send(dists, n * k, MPI_ELEM, r_send, PRINTING, MPI_COMM_WORLD);
 
 			break;
 	}
 
 	MPI_Barrier(MPI_COMM_WORLD);
 
-	/* free printing arrays */
-	free(dists);
-	free(swp);
+	/* free knn results */
+	delete_knn(res);
 
 	MPI_Finalize();
 }

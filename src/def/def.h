@@ -1,10 +1,26 @@
 #ifndef DEF_H
 #define DEF_H
 
+#include <stdint.h>
+#include <limits.h>
+
 #include <immintrin.h>
 
 typedef float elem_t;
-#define MPI_ELEM MPI_FLOAT
+
+#define MPI_ELEM_T MPI_FLOAT
+
+#if SIZE_MAX == UCHAR_MAX
+   #define MPI_SIZE_T MPI_UNSIGNED_CHAR
+#elif SIZE_MAX == USHRT_MAX
+   #define MPI_SIZE_T MPI_UNSIGNED_SHORT
+#elif SIZE_MAX == UINT_MAX
+   #define MPI_SIZE_T MPI_UNSIGNED
+#elif SIZE_MAX == ULONG_MAX
+   #define MPI_SIZE_T MPI_UNSIGNED_LONG
+#elif SIZE_MAX == ULLONG_MAX
+   #define MPI_SIZE_T MPI_UNSIGNED_LONG_LONG
+#endif
 
 #define VEC_T __m256
 #define VEC_SIZE 8
