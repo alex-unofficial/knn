@@ -21,19 +21,7 @@
 #define PRINTING_DIST 3
 #define PRINTING_IDX 4
 
-int read_matrix(FILE *file, elem_t *X, size_t n, size_t d) {
-	for(size_t i = 0 ; i < n ; i++) {
-		for(size_t j = 0 ; j < d ; j++) {
-			int k = fscanf(file, "%f", &MATRIX_ELEM(X, i, j, n, d));
-
-			if(!k && feof(file)) {
-				return 1;
-			}
-		}
-	}
-
-	return 0;
-}
+int read_matrix(FILE *file, elem_t *X, size_t n, size_t d);
 
 int main(int argc, char **argv) {
 
@@ -47,7 +35,7 @@ int main(int argc, char **argv) {
 	if(rank == ROOT) {
 		if(argc < 3) {
 			error = 1;
-			fprintf(stderr, "not enough arguments.\nusage: %s file.dat k\n", argv[0]);
+			fprintf(stderr, "not enough arguments.\nusage: %s in_file k\n", argv[0]);
 		}
 	}
 
@@ -64,13 +52,38 @@ int main(int argc, char **argv) {
 	char *input_fname = argv[1];
 	FILE *input_file;
 
+	size_t max_mem = 1*GB;
+
 	size_t N, d, k;
 	if(rank == ROOT) {
 		input_file = fopen(input_fname, "r");
 
-		k = atoi(argv[2]);
+		error = 0;
+		if(input_file == NULL) {
+			error = errno;
+		}
 
+		MPI_Bcast(&error, 1, MPI_INT, ROOT, MPI_COMM_WORLD);
+		MPI_Barrier(MPI_COMM_WORLD);
+
+		if(error) {
+			fprintf(stderr, "%s: %s\n", input_fname, strerror(error));
+			MPI_Finalize();
+			exit(error);
+		}
+
+		k = atoi(argv[2]);
 		fscanf(input_file, "%lu %lu\n", &N, &d);
+
+	} else {
+
+		MPI_Bcast(&error, 1, MPI_INT, ROOT, MPI_COMM_WORLD);
+		MPI_Barrier(MPI_COMM_WORLD);
+
+		if(error) {
+			MPI_Finalize();
+			exit(error);
+		}
 	}
 
 	MPI_Bcast(&N, 1, MPI_SIZE_T, ROOT, MPI_COMM_WORLD);
@@ -96,8 +109,6 @@ int main(int argc, char **argv) {
 
 	int n = i_end - i_begin;
 
-	size_t max_mem = 1*GB;
-
 	size_t t = (max_mem/n_max - 3*d*sizeof(elem_t) - 2*k*(sizeof(elem_t) + sizeof(size_t))) 
 			 / (sizeof(elem_t) + sizeof(size_t));
 
@@ -120,20 +131,6 @@ int main(int argc, char **argv) {
 
 	switch(rank) {
 		case ROOT: ;
-			error = 0;
-			if(input_file == NULL) {
-				error = errno;
-			}
-
-			MPI_Bcast(&error, 1, MPI_INT, ROOT, MPI_COMM_WORLD);
-			MPI_Barrier(MPI_COMM_WORLD);
-
-			if(error) {
-				fprintf(stderr, "%s\n", strerror(error));
-				MPI_Finalize();
-				exit(error);
-			}
-
 			/* root process reads its own data from the input file */
 			read_matrix(input_file, X, n, d);
 
@@ -158,14 +155,6 @@ int main(int argc, char **argv) {
 			break;
 
 		default: ;
-			MPI_Bcast(&error, 1, MPI_INT, ROOT, MPI_COMM_WORLD);
-			MPI_Barrier(MPI_COMM_WORLD);
-
-			if(error) {
-				MPI_Finalize();
-				exit(error);
-			}
-
 			/* other processes receive their data from the root process */
 			MPI_Recv(X, n_max * d, MPI_ELEM_T, ROOT, INIT_MATRIX, MPI_COMM_WORLD, &recv_status);
 
@@ -297,4 +286,18 @@ int main(int argc, char **argv) {
 	delete_knn(res);
 
 	MPI_Finalize();
+}
+
+int read_matrix(FILE *file, elem_t *X, size_t n, size_t d) {
+	for(size_t i = 0 ; i < n ; i++) {
+		for(size_t j = 0 ; j < d ; j++) {
+			int k = fscanf(file, "%f", &MATRIX_ELEM(X, i, j, n, d));
+
+			if(!k && feof(file)) {
+				return 1;
+			}
+		}
+	}
+
+	return 0;
 }
