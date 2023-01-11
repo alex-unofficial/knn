@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+
 #include <string.h>
 #include <errno.h>
-
 #include <time.h>
 
 #include <math.h>
@@ -25,18 +26,154 @@ int read_matrix(FILE *file, elem_t *X, size_t n, size_t d);
 
 int main(int argc, char **argv) {
 
+	/* initialize MPI environement */
 	MPI_Init(&argc, &argv);
 
 	int n_processes, rank;
 	MPI_Comm_size(MPI_COMM_WORLD, &n_processes);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+	/* initialize variables */
 	int error = 0;
-	if(rank == ROOT) {
-		if(argc < 3) {
-			error = 1;
-			fprintf(stderr, "not enough arguments.\nusage: %s in_file k\n", argv[0]);
-		}
+
+	FILE *input_file = NULL;
+	FILE *output_file = NULL;
+	FILE *log_file = NULL;
+
+	size_t max_mem = 1*GB;
+
+	size_t N, d, k = 0;
+
+	switch(rank) {
+		case ROOT: ;
+			char *input_fname = NULL;
+			char *output_fname = NULL;
+			char *log_fname = NULL;
+
+			error = 0;
+
+			int c;
+			while((c = getopt(argc, argv, "i:o:l:k:m:")) != -1) {
+				switch(c) {
+					case 'i':
+						input_fname = optarg;
+						break;
+						
+					case 'o':
+						output_fname = optarg;
+						break;
+
+					case 'l':
+						log_fname = optarg;
+						break;
+
+					case 'k':
+						k = atoi(optarg);
+						break;
+
+					case 'm':
+						size_t size;
+						char unit; 
+
+						int read_count = sscanf(optarg, "%zu%c", &size, &unit);
+
+						size_t unit_size = 1;
+						if(read_count == 0) {
+							error = EINVAL;
+							fprintf(stderr, "error parsing parameter '%c': %s\n", 'm', strerror(error));
+							break;
+
+						} else if(read_count == 2) {
+							switch(unit) {
+								case 'k':
+								case 'K':
+									unit_size = KB;
+									break;
+
+								case 'm':
+								case 'M':
+									unit_size = MB;
+									break;
+
+								case 'g':
+								case 'G':
+									unit_size = GB;
+									break;
+
+								default:
+									error = EINVAL;
+									fprintf(stderr, "error parsing parameter '%c': %s\n", 'm', strerror(error));
+									break;
+							}
+						}
+
+						max_mem = size * unit_size;
+						break;
+
+					case '?':
+						error = EINVAL;
+						fprintf(stderr, "error: parameter '%c' requires an input argument\n", optopt);
+						break;
+				}
+			}
+
+			if(error) break;
+
+			if(input_fname == NULL) {
+				if(optind < argc) {
+					input_fname = argv[optind++];
+				} else {
+					input_fname = "stdin";
+					input_file = stdin;
+				}
+			}
+
+			if(output_fname == NULL) {
+				output_fname = "stdout";
+				output_file = stdout;
+			}
+
+			if(log_fname == NULL) {
+				log_fname = "stdout";
+				log_file = stdout;
+			}
+
+			if((input_file == NULL) && (input_file = fopen(input_fname, "r")) == NULL) {
+				error = errno;
+				fprintf(stderr, "%s: %s\n", input_fname, strerror(error));
+				break;
+			}
+
+			if((output_file == NULL) && (output_file = fopen(output_fname, "w")) == NULL) {
+				error = errno;
+				fprintf(stderr, "%s: %s\n", output_fname, strerror(error));
+				break;
+			}
+
+			if((log_file == NULL) && (log_file = fopen(log_fname, "a")) == NULL) {
+				error = errno;
+				fprintf(stderr, "%s: %s\n", log_fname, strerror(error));
+				break;
+			}
+
+			if(k == 0) {
+				if(optind >= argc) {
+					error = EINVAL;
+					fprintf(stderr, "error: not enough input arguments\n");
+					break;
+				} else {
+					k = atoi(argv[optind++]);
+				}
+			}
+
+			int count = fscanf(input_file, "%zu %zu\n", &N, &d);
+			if(count < 2) {
+				error = errno;
+				fprintf(stderr, "error reading from %s: %s\n", input_fname, strerror(error));
+				break;
+			}
+
+			break;
 	}
 
 	MPI_Bcast(&error, 1, MPI_INT, ROOT, MPI_COMM_WORLD);
@@ -47,48 +184,10 @@ int main(int argc, char **argv) {
 		exit(error);
 	}
 
-	/* initialize variables */
-
-	char *input_fname = argv[1];
-	FILE *input_file;
-
-	size_t max_mem = 1*GB;
-
-	size_t N, d, k;
-	if(rank == ROOT) {
-		input_file = fopen(input_fname, "r");
-
-		error = 0;
-		if(input_file == NULL) {
-			error = errno;
-		}
-
-		MPI_Bcast(&error, 1, MPI_INT, ROOT, MPI_COMM_WORLD);
-		MPI_Barrier(MPI_COMM_WORLD);
-
-		if(error) {
-			fprintf(stderr, "%s: %s\n", input_fname, strerror(error));
-			MPI_Finalize();
-			exit(error);
-		}
-
-		k = atoi(argv[2]);
-		fscanf(input_file, "%lu %lu\n", &N, &d);
-
-	} else {
-
-		MPI_Bcast(&error, 1, MPI_INT, ROOT, MPI_COMM_WORLD);
-		MPI_Barrier(MPI_COMM_WORLD);
-
-		if(error) {
-			MPI_Finalize();
-			exit(error);
-		}
-	}
-
 	MPI_Bcast(&N, 1, MPI_SIZE_T, ROOT, MPI_COMM_WORLD);
 	MPI_Bcast(&d, 1, MPI_SIZE_T, ROOT, MPI_COMM_WORLD);
 	MPI_Bcast(&k, 1, MPI_SIZE_T, ROOT, MPI_COMM_WORLD);
+	MPI_Bcast(&max_mem, 1, MPI_SIZE_T, ROOT, MPI_COMM_WORLD);
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	
@@ -109,11 +208,10 @@ int main(int argc, char **argv) {
 
 	int n = i_end - i_begin;
 
-	size_t t = (max_mem/n_max - 3*d*sizeof(elem_t) - 2*k*(sizeof(elem_t) + sizeof(size_t))) 
-			 / (sizeof(elem_t) + sizeof(size_t));
+	intmax_t t = (intmax_t)(max_mem/n_max - 3*d*sizeof(elem_t) - 2*k*(sizeof(elem_t) + sizeof(size_t))) 
+			 / (intmax_t)(sizeof(elem_t) + sizeof(size_t));
 
 	t = min(t, n);
-
 
 	MPI_Barrier(MPI_COMM_WORLD);
 
@@ -150,7 +248,7 @@ int main(int argc, char **argv) {
 				SWAP(Y, Z);
 			}
 
-			fclose(input_file);
+			if(input_file != stdin) fclose(input_file);
 
 			break;
 
@@ -215,7 +313,7 @@ int main(int argc, char **argv) {
 			/* print information */
 			double time_elapsed = (t_end.tv_sec - t_begin.tv_sec) + (t_end.tv_nsec - t_begin.tv_nsec) / 1e9f;
 
-			printf("%lu %lu %lu %d %d %lu %lu %lf\n", N, d, k, n_processes, n_threads, n_max, t, time_elapsed);
+			fprintf(log_file, "%zu %zu %zu %zu %d %d %zu %zd %lf\n", N, d, k, max_mem, n_processes, n_threads, n_max, t, time_elapsed);
 			
 			/* create arrays to be used for printing */
 			elem_t *dists= (elem_t *) malloc(n_max * k * sizeof(elem_t));
@@ -241,10 +339,10 @@ int main(int argc, char **argv) {
 
 				for(size_t i = 0 ; i < n ; i++) {
 					for(size_t j = 0 ; j < k ; j++) {
-						printf("%lu:%0.2f ", 
+						fprintf(output_file, "%zu:%0.2f ", 
 								MATRIX_ELEM(idxs, i, j, n, k), MATRIX_ELEM(dists, i, j, n, k));
 					}
-					printf("\n");
+					fprintf(output_file, "\n");
 				}
 
 				MPI_Wait(&recv_dist, &dist_status);
@@ -259,11 +357,14 @@ int main(int argc, char **argv) {
 				
 			} for(size_t i = 0 ; i < n ; i++) {
 				for(size_t j = 0 ; j < k ; j++) {
-					printf("%lu:%0.2f ", 
+					fprintf(output_file, "%zu:%0.2f ", 
 							MATRIX_ELEM(idxs, i, j, n, k), MATRIX_ELEM(dists, i, j, n, k));
 				}
-				printf("\n");
+				fprintf(output_file, "\n");
 			}
+
+			if(output_file != stdout) fclose(output_file);
+			if(log_file != stdout) fclose(log_file);
 
 			/* free printing arrays */
 			free(dists_swp);
