@@ -45,9 +45,9 @@ int main(int argc, char **argv) {
 
 	int error = 0;
 	if(rank == ROOT) {
-		if(argc < 5) {
+		if(argc < 3) {
 			error = 1;
-			fprintf(stderr, "not enough arguments.\nusage: %s file.dat k N d\n", argv[0]);
+			fprintf(stderr, "not enough arguments.\nusage: %s file.dat k\n", argv[0]);
 		}
 	}
 
@@ -61,10 +61,23 @@ int main(int argc, char **argv) {
 
 	/* initialize variables */
 
-	char *filename = argv[1];
-	size_t k = atoi(argv[2]);
-	size_t N = atoi(argv[3]);
-	size_t d = atoi(argv[4]);
+	char *input_fname = argv[1];
+	FILE *input_file;
+
+	size_t N, d, k;
+	if(rank == ROOT) {
+		input_file = fopen(input_fname, "r");
+
+		k = atoi(argv[2]);
+
+		fscanf(input_file, "%lu %lu\n", &N, &d);
+	}
+
+	MPI_Bcast(&N, 1, MPI_SIZE_T, ROOT, MPI_COMM_WORLD);
+	MPI_Bcast(&d, 1, MPI_SIZE_T, ROOT, MPI_COMM_WORLD);
+	MPI_Bcast(&k, 1, MPI_SIZE_T, ROOT, MPI_COMM_WORLD);
+
+	MPI_Barrier(MPI_COMM_WORLD);
 	
 	size_t n_max = (size_t)ceil((double)N/(double)n_processes);
 
@@ -83,16 +96,18 @@ int main(int argc, char **argv) {
 
 	int n = i_end - i_begin;
 
-	size_t max_mem = 1.5 * GB;
+	size_t max_mem = 1*GB;
 
-	size_t t = min((max_mem/n_max - 3*d*sizeof(elem_t) - 2*k*(sizeof(elem_t) + sizeof(size_t)))
-			/ (sizeof(elem_t) + sizeof(size_t)), n_max);
+	size_t t = (max_mem/n_max - 3*d*sizeof(elem_t) - 2*k*(sizeof(elem_t) + sizeof(size_t))) 
+			 / (sizeof(elem_t) + sizeof(size_t));
+
+	t = min(t, n);
 
 
 	MPI_Barrier(MPI_COMM_WORLD);
 
 	if(t < 1) {
-		if(rank == ROOT) fprintf(stderr, "not enough memory\n");
+		if(rank == ROOT) fprintf(stderr, "not enough memory.\n");
 		MPI_Finalize();
 		exit(ENOMEM);
 	}
@@ -105,10 +120,10 @@ int main(int argc, char **argv) {
 
 	switch(rank) {
 		case ROOT: ;
-			FILE *file = fopen(filename, "r");
+			input_file = fopen(input_fname, "r");
 
 			error = 0;
-			if(file == NULL) {
+			if(input_file == NULL) {
 				error = errno;
 			}
 
@@ -122,7 +137,7 @@ int main(int argc, char **argv) {
 			}
 
 			/* root process reads its own data from the input file */
-			read_matrix(file, X, n, d);
+			read_matrix(input_file, X, n, d);
 
 			/* then it reads from the input file and sends 
 			 * data to the corresponding process */
@@ -132,14 +147,15 @@ int main(int argc, char **argv) {
 
 				int r_n = r_end - r_begin;
 
-				read_matrix(file, Y, r_n, d);
+				read_matrix(input_file, Y, r_n, d);
 
 				MPI_Wait(&send_req, &send_status);
 				MPI_Isend(Y, r_n * d, MPI_ELEM_T, r, INIT_MATRIX, MPI_COMM_WORLD, &send_req);
 
 				SWAP(Y, Z);
 			}
-			fclose(file);
+
+			fclose(input_file);
 
 			break;
 

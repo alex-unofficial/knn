@@ -5,11 +5,11 @@
 #SBATCH --nodes=3
 #SBATCH --ntasks-per-node=3
 #SBATCH --cpus-per-task=10
-#SBARCH --mem=5G
+#SBATCH --mem=5G
 
 module load gcc/10.2.0 openmpi/4.0.5 gsl/2.5 pkgconf/1.7.3
 
 make --quiet clean && make --quiet
 
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
-srun ./bin/mpiknn data/grid-1000000x3.dat 27 1000000 3
+srun ./bin/mpiknn $1 27
