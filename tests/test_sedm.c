@@ -17,11 +17,11 @@ int main(int argc, char** argv) {
 	printf("========= testing sedm ==========\n");
 
 	// Set the dimensions of the matrices
-	int n = 1000;
-	int m = 6000;
-	int d = 512;
+	size_t n = 100000;
+	size_t m = 100000;
+	size_t d = 8;
 
-	printf("n = %d\nm = %d\nd = %d\n", n, m, d);
+	printf("n = %lu\nm = %lu\nd = %lu\n", n, m, d);
 	printf("\n");
 
 	// Allocate memory for the matrices
@@ -31,13 +31,13 @@ int main(int argc, char** argv) {
 	elem_t *reference_distance_matrix = create_matrix(n, m);
 
 	// Initialize the matrices with random values
-	for (int i = 0; i < n; i++) {
-		for (int j = 0; j < d; j++) {
+	for (size_t i = 0; i < n; i++) {
+		for (size_t j = 0; j < d; j++) {
 			MATRIX_ELEM(X, i, j, n, d) = (elem_t) rand() / RAND_MAX;
 		}
 	}
-	for (int i = 0; i < m; i++) {
-		for (int j = 0; j < d; j++) {
+	for (size_t i = 0; i < m; i++) {
+		for (size_t j = 0; j < d; j++) {
 			MATRIX_ELEM(Y, i, j, m, d) = (elem_t) rand() / RAND_MAX;
 		}
 	}
@@ -57,13 +57,13 @@ int main(int argc, char** argv) {
 	printf("checking for errors:\n");
 	// Compare the distance matrices
    	int errors = 0;
-	for (int i = 0; i < n; i++) {
-		for (int j = 0; j < m; j++) {
+	for (size_t i = 0; i < n; i++) {
+		for (size_t j = 0; j < m; j++) {
 			if (fabs(MATRIX_ELEM(distance_matrix, i, j, n, m) 
 				   - MATRIX_ELEM(reference_distance_matrix, i, j, n, m)) > EPSILON) {
 
-				printf("%d: Difference at (%d, %d): %0.4f (calculated) vs %0.4f (reference)\n", i, j, 
-					++errors, MATRIX_ELEM(distance_matrix, i, j, n, m), 
+				printf("%d: Difference at (%lu, %lu): %0.4f (calculated) vs %0.4f (reference)\n",
+					++errors, i, j, MATRIX_ELEM(distance_matrix, i, j, n, m), 
 					MATRIX_ELEM(reference_distance_matrix, i, j, n, m));
 			}
 		}
