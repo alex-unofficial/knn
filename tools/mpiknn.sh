@@ -12,4 +12,4 @@ module load gcc/10.2.0 openmpi/4.0.5 gsl/2.5 pkgconf/1.7.3
 make --quiet clean && make --quiet
 
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
-srun ./bin/mpiknn $1 $2
+srun ./bin/mpiknn -i $1 -o knn_$SLURM_JOB_ID.out -l knn.log -m 250G -k $2
