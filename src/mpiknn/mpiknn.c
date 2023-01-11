@@ -120,8 +120,6 @@ int main(int argc, char **argv) {
 
 	switch(rank) {
 		case ROOT: ;
-			input_file = fopen(input_fname, "r");
-
 			error = 0;
 			if(input_file == NULL) {
 				error = errno;
