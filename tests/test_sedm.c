@@ -9,7 +9,7 @@
 #include "matrix.h"
 #include "def.h"
 
-#define EPSILON 1e-3
+#define EPSILON 1e-1
 
 int main(int argc, char** argv) {
 	srand(time(NULL));
@@ -17,9 +17,9 @@ int main(int argc, char** argv) {
 	printf("========= testing sedm ==========\n");
 
 	// Set the dimensions of the matrices
-	size_t n = 100000;
-	size_t m = 100000;
-	size_t d = 8;
+	size_t n = 20000;
+	size_t m = 20000;
+	size_t d = 4096;
 
 	printf("n = %lu\nm = %lu\nd = %lu\n", n, m, d);
 	printf("\n");

@@ -3,11 +3,12 @@
 #SBATCH --time=1:00:00
 #SBATCH --job-name=test_sedm
 #SBATCH --nodes=1
-#SBATCH --ntasks=30
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=60
 
-module load gcc/10.2.0 openmpi/4.0.5 gsl/2.5 pkgconf/1.7.3 julia/1.6.3
+module load gcc/10.2.0 openmpi/4.0.5 gsl/2.5 pkgconf/1.7.3
 
-make clean && make ./bin/test_sedm
+make --quiet clean && make --quiet ./bin/test_sedm
 
-export OMP_NUM_THREADS=$SLURM_NTASKS
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 ./bin/test_sedm
