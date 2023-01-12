@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
 						k = atoi(optarg);
 						break;
 
-					case 'm':
+					case 'm': ;
 						size_t size;
 						char unit; 
 
