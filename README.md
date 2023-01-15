@@ -102,9 +102,10 @@ A summary of the options is below
 ```bash
 ./bin/mpiknn [-i input] [-o output] [-l logfile] [-m mem] [-k k] [--] [input.dat] [k]
 ```
-where you may not specify the input file both using `-i` and after `--`, but you must specify at least 1.
-the same is true for `k`
+you may not specify the input file using both `-i` and after `--`.
+if no input file is specified then `stdin` is used
 
+`k` must be specified exactly once, either using `-k` or after `--`
 
 ### running on `AUTH IT`
 in order to run the program in the `AUTH IT` compute cluster you can use one of the available

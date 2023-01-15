@@ -15,6 +15,7 @@
 #include "matrix.h"
 #include "def.h"
 
+/* MPI constants and tags */
 #define ROOT 0
 
 #define INIT_MATRIX 1
@@ -22,13 +23,36 @@
 #define PRINTING_DIST 3
 #define PRINTING_IDX 4
 
-int read_matrix(FILE *file, elem_t *X, size_t n, size_t d);
+/* function that reads n * d elements from file into X */
+int read_matrix(FILE *file, elem_t *X, size_t n, size_t d) {
+	for(size_t i = 0 ; i < n ; i++) {
+		for(size_t j = 0 ; j < d ; j++) {
+			int k = fscanf(file, "%f", &MATRIX_ELEM(X, i, j, n, d));
 
+			if(!k && feof(file)) {
+				return 1;
+			}
+		}
+	}
+
+	return 0;
+}
+
+/* mpiknn calculates all-knn for all input points using MPI on a
+ * set of distributed compute nodes.
+ *
+ * The input array is split equally between all the nodes then each
+ * node is responsible for finding the k nearest neighbours of all
+ * of the points in its corresponding subset.
+ *
+ * the root process is responsible for I/O and initialization as
+ * well as error checking.
+ */
 int main(int argc, char **argv) {
-
 	/* initialize MPI environement */
 	MPI_Init(&argc, &argv);
 
+	/* get number of processes and the process rank */
 	int n_processes, rank;
 	MPI_Comm_size(MPI_COMM_WORLD, &n_processes);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -40,10 +64,10 @@ int main(int argc, char **argv) {
 	FILE *output_file = NULL;
 	FILE *log_file = NULL;
 
+	size_t N, d, k = 0;
 	size_t max_mem = 1*GB;
 
-	size_t N, d, k = 0;
-
+	/* parse command line options and arguments */
 	switch(rank) {
 		case ROOT: ;
 			char *input_fname = NULL;
@@ -52,29 +76,36 @@ int main(int argc, char **argv) {
 
 			error = 0;
 
+			/* use getopt to parse command line options */
 			int c;
 			while((c = getopt(argc, argv, "i:o:l:k:m:")) != -1) {
 				switch(c) {
+					/* option -i specifies the input device */
 					case 'i':
 						input_fname = optarg;
 						break;
 						
+					/* option -o specifies the output device */
 					case 'o':
 						output_fname = optarg;
 						break;
 
+					/* option -l specifies the log file */
 					case 'l':
 						log_fname = optarg;
 						break;
 
+					/* option -k specifies the number of nearest neighbours */
 					case 'k':
 						k = atoi(optarg);
 						break;
 
+					/* option -m specifies the memory to use per process */
 					case 'm': ;
 						size_t size;
 						char unit; 
 
+						/* read a size and a unit multiplier */
 						int read_count = sscanf(optarg, "%zu%c", &size, &unit);
 
 						size_t unit_size = 1;
@@ -84,6 +115,7 @@ int main(int argc, char **argv) {
 							break;
 
 						} else if(read_count == 2) {
+							/* use the correct unit multiplier */
 							switch(unit) {
 								case 'k':
 								case 'K':
@@ -107,6 +139,7 @@ int main(int argc, char **argv) {
 							}
 						}
 
+						/* calculate the size in bytes */
 						max_mem = size * unit_size;
 						break;
 
@@ -119,6 +152,8 @@ int main(int argc, char **argv) {
 
 			if(error) break;
 
+			/* if input device name was not specified using -i use argv[optind]
+			 * or if that is also unspecified then stdin*/
 			if(input_fname == NULL) {
 				if(optind < argc) {
 					input_fname = argv[optind++];
@@ -128,34 +163,40 @@ int main(int argc, char **argv) {
 				}
 			}
 
+			/* if output device name was not specified using -o use stdout */
 			if(output_fname == NULL) {
 				output_fname = "stdout";
 				output_file = stdout;
 			}
 
+			/* if log file name was not specified using -l use stdout */
 			if(log_fname == NULL) {
 				log_fname = "stdout";
 				log_file = stdout;
 			}
 
+			/* if input file has not been opened, open input file to input file name */
 			if((input_file == NULL) && (input_file = fopen(input_fname, "r")) == NULL) {
 				error = errno;
 				fprintf(stderr, "%s: %s\n", input_fname, strerror(error));
 				break;
 			}
 
+			/* if output file has not been opened, open output file to output file name */
 			if((output_file == NULL) && (output_file = fopen(output_fname, "w")) == NULL) {
 				error = errno;
 				fprintf(stderr, "%s: %s\n", output_fname, strerror(error));
 				break;
 			}
 
+			/* if log file has not been opened, open log file to log file name */
 			if((log_file == NULL) && (log_file = fopen(log_fname, "a")) == NULL) {
 				error = errno;
 				fprintf(stderr, "%s: %s\n", log_fname, strerror(error));
 				break;
 			}
 
+			/* if k was unspecified set k from argv[optind] */
 			if(k == 0) {
 				if(optind >= argc) {
 					error = EINVAL;
@@ -166,6 +207,7 @@ int main(int argc, char **argv) {
 				}
 			}
 
+			/* read matrix dimensions from input device */
 			int count = fscanf(input_file, "%zu %zu\n", &N, &d);
 			if(count < 2) {
 				error = errno;
@@ -176,6 +218,7 @@ int main(int argc, char **argv) {
 			break;
 	}
 
+	/* check for errors in options and arguments */
 	MPI_Bcast(&error, 1, MPI_INT, ROOT, MPI_COMM_WORLD);
 	MPI_Barrier(MPI_COMM_WORLD);
 
@@ -184,6 +227,7 @@ int main(int argc, char **argv) {
 		exit(error);
 	}
 
+	/* broadcast parameters to other processes */
 	MPI_Bcast(&N, 1, MPI_SIZE_T, ROOT, MPI_COMM_WORLD);
 	MPI_Bcast(&d, 1, MPI_SIZE_T, ROOT, MPI_COMM_WORLD);
 	MPI_Bcast(&k, 1, MPI_SIZE_T, ROOT, MPI_COMM_WORLD);
@@ -191,26 +235,35 @@ int main(int argc, char **argv) {
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	
+	/* n_max is the max number of rows that any process can have*/
 	size_t n_max = (size_t)ceil((double)N/(double)n_processes);
 
+	/* r_send and r_recv are initialized using the custom modulus function
+	 * in order to get the previous and the next process in the ring */
 	int r_send = mod(rank - 1, n_processes);
 	int r_recv = mod(rank + 1, n_processes);
 
+	/* set OpenMP max threads */
 	int n_threads = omp_get_max_threads();
 	omp_set_num_threads(n_threads);
 
+	/* initialize X,Y and Z matrices */
 	elem_t *X = create_matrix(n_max, d);
 	elem_t *Y = create_matrix(n_max, d);
 	elem_t *Z = create_matrix(n_max, d);
 
+	/* calculate the begin and end indices of the subset of the input
+	 * that corresponds to this process */
 	int i_begin = rank * N / n_processes;
 	int i_end = min((rank + 1) * N / n_processes, N);
 
 	int n = i_end - i_begin;
 
+	/* formula to get the maximum value of t for the specified memory size */
 	intmax_t t = (intmax_t)(max_mem/n_max - 3*d*sizeof(elem_t) - 2*k*(sizeof(elem_t) + sizeof(size_t))) 
 			 / (intmax_t)(sizeof(elem_t) + sizeof(size_t));
 
+	/* then set t as the minimum between itself and n, since there is no point in t being larger than n */
 	t = min(t, n);
 
 	MPI_Barrier(MPI_COMM_WORLD);
@@ -220,6 +273,8 @@ int main(int argc, char **argv) {
 		MPI_Finalize();
 		exit(ENOMEM);
 	}
+
+	MPI_Barrier(MPI_COMM_WORLD);
 	
 	/* initialize the matrices */
 	
@@ -260,16 +315,18 @@ int main(int argc, char **argv) {
 	}
 
 	/* also initialize Y = X */
-	int m = n;
-
 	#pragma omp parallel for simd
 	for(size_t i = 0 ; i < m * d ; i++) {
 		Y[i] = X[i];
 	}
+
+	int m = n;
 	
+	/* then wait for the last send to finish before continuing */
 	if(rank == ROOT) MPI_Wait(&send_req, &send_status);
 
 	MPI_Barrier(MPI_COMM_WORLD);
+
 	struct timespec t_begin, t_end;
 	clock_gettime(CLOCK_MONOTONIC, &t_begin);
 
@@ -310,9 +367,8 @@ int main(int argc, char **argv) {
 	/* print results */
 	switch(rank) {
 		case ROOT: ;
-			/* print information */
+			/* print information to log file */
 			double time_elapsed = (t_end.tv_sec - t_begin.tv_sec) + (t_end.tv_nsec - t_begin.tv_nsec) / 1e9f;
-
 			fprintf(log_file, "%zu %zu %zu %zu %d %d %zu %zd %lf\n", N, d, k, max_mem, n_processes, n_threads, n_max, t, time_elapsed);
 			
 			/* create arrays to be used for printing */
@@ -389,16 +445,3 @@ int main(int argc, char **argv) {
 	MPI_Finalize();
 }
 
-int read_matrix(FILE *file, elem_t *X, size_t n, size_t d) {
-	for(size_t i = 0 ; i < n ; i++) {
-		for(size_t j = 0 ; j < d ; j++) {
-			int k = fscanf(file, "%f", &MATRIX_ELEM(X, i, j, n, d));
-
-			if(!k && feof(file)) {
-				return 1;
-			}
-		}
-	}
-
-	return 0;
-}

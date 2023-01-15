@@ -6,6 +6,21 @@
 #include "matrix.h"
 #include "def.h"
 
+/* sedm_comp computes the SEDM between the input matrices X and Y
+ * using a compound method and CBLAS libraries.
+ *
+ * inputs:
+ * x (elem_t *): matrix stored in row-major format, allocated using create_matrix
+ * n (size_t): rows of matrix X
+ * Y (elem_t *): matrix stored in row-major format, allocated using create_matrix
+ * m (size_t): rows of matrix Y
+ * d (size_t): columns of matrices X and Y
+ * 
+ * outputs:
+ * distance_matrix (elem_t *): matrix in row-major format where the result
+ *                             will be stored. The memory must be allocated
+ *                             prior to calling the function.
+ */
 void sedm_comp(const elem_t *X, size_t n, const elem_t *Y, size_t m, size_t d, elem_t *distance_matrix) {
 
 	// Setting the number of threads for OpenMP to be the maximum possible
@@ -85,6 +100,20 @@ void sedm_comp(const elem_t *X, size_t n, const elem_t *Y, size_t m, size_t d, e
 	free(XY);
 }
 
+/* sedm_simp computes the SEDM between the input matrices X and Y using a simple method.
+ *
+ * inputs:
+ * x (elem_t *): matrix stored in row-major format, allocated using create_matrix
+ * n (size_t): rows of matrix X
+ * Y (elem_t *): matrix stored in row-major format, allocated using create_matrix
+ * m (size_t): rows of matrix Y
+ * d (size_t): columns of matrices X and Y
+ * 
+ * outputs:
+ * distance_matrix (elem_t *): matrix in row-major format where the result
+ *                             will be stored. The memory must be allocated
+ *                             prior to calling the function.
+ */
 void sedm_simp(const elem_t *X, size_t n, const elem_t *Y, size_t m, size_t d, elem_t *distance_matrix) {
 
 	// Setting the number of threads for OpenMP to be the maximum possible
