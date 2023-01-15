@@ -29,10 +29,10 @@ LDFLAGS=$(shell pkgconf --libs $(PACKAGES))
 EXEC_NAME=mpiknn
 
 # The various directories used in the project
-BUILD_DIR	?= ./build
-BIN_DIR		?= ./bin
-SRC_DIR 	?= ./src
-TESTS_DIR	?= ./tests
+BUILD_DIR ?= ./build
+BIN_DIR ?= ./bin
+SRC_DIR ?= ./src
+TESTS_DIR ?= ./tests
 TOOLS_DIR ?= ./tools
 
 # Source files for the project
