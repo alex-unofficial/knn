@@ -56,8 +56,8 @@ mpirun ./bin/mpiknn input.dat k
 N d
 a11 a12 a13 ... a1d
 a21 a22 a23 ... a2d
- :   :   :  `.   :
- :   :   :    `. :
+a31 a32 a33 ... a3d
+ :   :   :       :
 aN1 aN2 aN3 ... aNd
 ```
 where the first line specifies the number of input points `N` and the number of dimensions `d`
