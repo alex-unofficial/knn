@@ -22,7 +22,7 @@ installed [mpi](https://www.open-mpi.org/), and [gsl](https://www.gnu.org/softwa
 You also need `make` to run the Makefile.
 
 ### setup on `AUTH IT Compute Cluster`
-you can use the following line to load all the required modules
+You can use the following line to load all the required modules
 ```
 module load gcc/10.2.0 openmpi/4.0.5 gsl/2.5 pkgconf/1.7.3
 ```
@@ -56,8 +56,8 @@ mpirun ./bin/mpiknn input.dat k
 N d
 a11 a12 a13 ... a1d
 a21 a22 a23 ... a2d
- :   :   :  '.   :
- :   :   :    '. :
+ :   :   :  `.   :
+ :   :   :    `. :
 aN1 aN2 aN3 ... aNd
 ```
 where the first line specifies the number of input points `N` and the number of dimensions `d`
