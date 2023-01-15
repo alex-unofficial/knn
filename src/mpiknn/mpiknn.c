@@ -315,12 +315,11 @@ int main(int argc, char **argv) {
 	}
 
 	/* also initialize Y = X */
+	int m = n;
 	#pragma omp parallel for simd
 	for(size_t i = 0 ; i < m * d ; i++) {
 		Y[i] = X[i];
 	}
-
-	int m = n;
 	
 	/* then wait for the last send to finish before continuing */
 	if(rank == ROOT) MPI_Wait(&send_req, &send_status);

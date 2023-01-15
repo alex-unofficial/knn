@@ -17,12 +17,10 @@ int main(int argc, char** argv) {
 
 	printf("========= testing sedm ==========\n");
 
-	FILE *logfile = fopen("data/results/sedm.log", "a");
-
 	// Set the dimensions of the matrices
-	size_t n = atoi(argv[1]);
-	size_t m = atoi(argv[2]);
-	size_t d = atoi(argv[3]);
+	size_t n = 1000;
+	size_t m = 1000;
+	size_t d = 256;
 
 	printf("n = %lu\nm = %lu\nd = %lu\n", n, m, d);
 	printf("\n");
@@ -80,15 +78,11 @@ int main(int argc, char** argv) {
 	printf("The relative speedup is %0.0f\%\n", 100.0 * sedm_comp_time / sedm_simp_time);
 	printf("\n");
 
-	fprintf(logfile, "%zu %zu %zu %lf %lf\n", n, m, d, sedm_simp_time, sedm_comp_time);
-
 	// Free memory
 	delete_matrix(X);
 	delete_matrix(Y);
 	delete_matrix(distance_matrix);
 	delete_matrix(reference_distance_matrix);
-
-	fclose(logfile);
 
 	if(!errors)
 		return 0;
